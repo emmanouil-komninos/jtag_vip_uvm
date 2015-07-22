@@ -54,13 +54,11 @@ class jtag_driver extends uvm_driver #(jtag_send_packet);
       `uvm_info("JTAG_DRIVER_INFO", " Driver used if from config db", UVM_LOW)
 
     // time consuming part
-    
     while(1)
       begin
         seq_item_port.get_next_item(req);
         
         phase.raise_objection(this,"Jtag Driver raised objection");
-        // req.print();
         
         ir_seq();
         // dr_seq();
@@ -87,8 +85,8 @@ class jtag_driver extends uvm_driver #(jtag_send_packet);
   
   extern task dr_seq();
   extern task ir_seq();
-  extern function void update_state_ir(bit tms);
-  extern function bit drive_tms_ir();
+  extern function void compute_state(bit tms);
+  extern function bit drive_tms_ir(jtag_send_packet test_class);
 
   // function void end_of_elaboration_phase (uvm_phase phase);
   //   print();
@@ -98,72 +96,82 @@ endclass // jtag_driver
 
 task jtag_driver::dr_seq();
   
-  @jtag_vif_drv.drv_ck;
-  jtag_vif_drv.tms = 0;
-  @jtag_vif_drv.drv_ck;
-  jtag_vif_drv.tms = 1;
-  current_dr_state = SELECT_DR;
-  @jtag_vif_drv.drv_ck;
-  jtag_vif_drv.tms = 0;
-  current_dr_state = CAPTURE;
+   jtag_send_packet test_class;
   
-  repeat(jtag_drv_cfg.data_sz)
+  $cast(test_class, req.clone());
+  this.exit_ir = 0;
+  
+  while (!this.exit_ir)
     begin
+      
+      // jtag_vif_drv.tms = drive_tms_ir();
+      // compute_state(jtag_vif_drv.tms);
       @jtag_vif_drv.drv_ck;
-      current_dr_state = SHIFT;
-      jtag_vif_drv.tdi= 1;
+      this.current_state = this.next_state;
+      
     end
-  
-  @jtag_vif_drv.drv_ck;
-  jtag_vif_drv.tms = 1;
-  current_dr_state = EXIT;
-  @jtag_vif_drv.drv_ck;
-  jtag_vif_drv.tms = 1;
-  current_dr_state = UPDATE;
-  @jtag_vif_drv.drv_ck;
-  jtag_vif_drv.tms = 0;
-  current_dr_state = IDLE; 
-  
+ 
 endtask // dr_seq
 
+task jtag_driver::ir_seq();
+  
+  jtag_send_packet test_class;
+
+  $cast(test_class, req.clone());
+
+  test_class.print();
+  
+  this.exit_ir = 0;
+  
+  while (!this.exit_ir)
+    begin
+      jtag_vif_drv.tms = drive_tms_ir(test_class);
+      compute_state(jtag_vif_drv.tms);
+      @jtag_vif_drv.drv_ck;
+      this.current_state = this.next_state;
+    end
+
+endtask // ir_seq
+
 // compute tms based on current state
-function bit jtag_driver::drive_tms_ir();
+function bit jtag_driver::drive_tms_ir(jtag_send_packet test_class);
   
   bit tms;
   
   this.exit_ir = 0;
+  
   case (this.current_state)
     IDLE:
       begin
-        this.next_state = SELECT_DR;
+        // this.next_state = SELECT_DR;
         tms = 1;
       end
     SELECT_DR:
       begin
-        this.next_state = SELECT_IR;
+        // this.next_state = SELECT_IR;
         tms = 1;
       end
     SELECT_IR:
       begin
-        this.next_state = CAPTURE;
+        // this.next_state = CAPTURE;
       end
     CAPTURE:
       begin
-        this.next_state = SHIFT;
+        // this.next_state = SHIFT;
       end
     SHIFT:
       begin
-        this.next_state = EXIT;
+        // this.next_state = EXIT;
         tms = 1;
       end
     EXIT:
       begin
-        this.next_state = UPDATE;
+        // this.next_state = UPDATE;
         tms = 1;
       end
     UPDATE:
       begin
-        this.next_state = IDLE;
+        // this.next_state = IDLE;
         this.exit_ir = 1;
       end
     default:
@@ -172,94 +180,76 @@ function bit jtag_driver::drive_tms_ir();
   
   return tms;
   
-endfunction // ir
-
-task jtag_driver::ir_seq();
-  
-  jtag_send_packet test_class;
-  
-  $cast(test_class, req.clone());
-  this.exit_ir = 0;
-  
-  while (!this.exit_ir)
-    begin     
-      jtag_vif_drv.tms = drive_tms_ir();
-      @jtag_vif_drv.drv_ck;
-      update_state_ir(jtag_vif_drv.tms);
-    end
-    
-endtask // ir_seq
+endfunction // drive_tms_ir
 
 // compute next state based on tms
-function void jtag_driver::update_state_ir(bit tms);
+function void jtag_driver::compute_state(bit tms);
   
-  this.current_state = this.next_state;
+  case (this.current_state)
+    RESET:
+      begin 
+        if(tms == 0) 
+          this.next_state = IDLE;
+      end
+    IDLE: 
+      begin
+        if(tms == 1) 
+          this.next_state = SELECT_DR;
+      end
+    SELECT_DR: 
+      begin
+        if(tms == 1) 
+          this.next_state = SELECT_IR;
+        else
+          this.next_state = CAPTURE;
+      end
+    SELECT_IR: 
+      begin
+        if(tms == 1)
+          this.next_state = RESET;
+        else
+          this.next_state = CAPTURE;
+      end
+    CAPTURE: 
+      begin
+        if(tms == 1)
+          this.next_state = EXIT;
+        else
+          this.next_state = SHIFT;
+      end
+    SHIFT: 
+      begin
+        if(tms == 1)
+          this.next_state = EXIT;
+      end
+    EXIT:
+      begin
+        if(tms == 1)
+          this.next_state = UPDATE;
+        else
+          this.next_state = PAUSE;
+      end
+    PAUSE:
+      begin
+        if(tms == 1)
+          this.next_state = EXIT2;
+      end
+    EXIT2:
+      begin
+        if(tms == 1)
+          this.next_state = UPDATE;
+        else
+          this.next_state = SHIFT;
+      end
+    UPDATE:
+      begin
+        if(tms == 1)
+          this.next_state = SELECT_DR;
+        else
+          this.next_state = IDLE;
+      end
+  endcase
   
-  // case (this.current_state)
-  //   RESET:
-  //     begin 
-  //       if(tms == 0) 
-  //         this.next_state = IDLE;
-  //     end
-  //   IDLE: 
-  //     begin
-  //       if(tms == 1) 
-  //         this.next_state = SELECT_DR;
-  //     end
-  //   SELECT_DR: 
-  //     begin
-  //       if(tms == 1) 
-  //         this.next_state = SELECT_IR;
-  //       else
-  //         this.next_state = CAPTURE;
-  //     end
-  //   SELECT_IR: 
-  //     begin
-  //       if(tms == 1)
-  //         this.next_state = RESET;
-  //       else
-  //         this.next_state = CAPTURE;
-  //     end
-  //   CAPTURE: 
-  //     begin
-  //       if(tms == 1)
-  //         this.next_state = EXIT;
-  //       else
-  //         this.next_state = SHIFT;
-  //     end
-  //   SHIFT: 
-  //     begin
-  //       if(tms == 1)
-  //         this.next_state = EXIT;
-  //     end
-  //   EXIT:
-  //     begin
-  //       if(tms == 1)
-  //         this.next_state = UPDATE;
-  //       else
-  //         this.next_state = PAUSE;
-  //     end
-  //   PAUSE:
-  //     begin
-  //       if(tms == 1)
-  //         this.next_state = EXIT2;
-  //     end
-  //   EXIT2:
-  //     begin
-  //       if(tms == 1)
-  //         this.next_state = UPDATE;
-  //       else
-  //         this.next_state = SHIFT;
-  //     end
-  //   UPDATE:
-  //     begin
-  //       if(tms == 1)
-  //         this.next_state = SELECT_DR;
-  //       else
-  //         this.next_state = IDLE;
-  //     end
-  // endcase
-  
-endfunction // update_state
+endfunction // compute_state
 
 `endif

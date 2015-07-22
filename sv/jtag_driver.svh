@@ -65,10 +65,6 @@ class jtag_driver extends uvm_driver #(jtag_send_packet);
         phase.drop_objection(this, "Jtag Driver dropped objection");
         seq_item_port.item_done(req);
       end
-    // jtag_vif_drv.trst = 0;
-    // @jtag_vif_drv.drv_ck;
-    // ir_seq();
-    // dr_seq();
     
   endtask // run_phase
   
@@ -86,7 +82,7 @@ class jtag_driver extends uvm_driver #(jtag_send_packet);
   extern task dr_seq();
   extern task ir_seq();
   extern function void compute_state(bit tms);
-  extern function bit drive_tms_ir(jtag_send_packet test_class);
+  extern function void drive_tms_ir(jtag_send_packet test_class);
 
   // function void end_of_elaboration_phase (uvm_phase phase);
   //   print();
@@ -118,14 +114,12 @@ task jtag_driver::ir_seq();
   jtag_send_packet test_class;
 
   $cast(test_class, req.clone());
-
-  test_class.print();
   
   this.exit_ir = 0;
   
   while (!this.exit_ir)
     begin
-      jtag_vif_drv.tms = drive_tms_ir(test_class);
+      drive_tms_ir(test_class);
       compute_state(jtag_vif_drv.tms);
       @jtag_vif_drv.drv_ck;
       this.current_state = this.next_state;
@@ -134,7 +128,7 @@ task jtag_driver::ir_seq();
 endtask // ir_seq
 
 // compute tms based on current state
-function bit jtag_driver::drive_tms_ir(jtag_send_packet test_class);
+function void jtag_driver::drive_tms_ir(jtag_send_packet test_class);
   
   bit tms;
   
@@ -144,30 +138,34 @@ function bit jtag_driver::drive_tms_ir(jtag_send_packet test_class);
     IDLE:
       begin
         // this.next_state = SELECT_DR;
-        tms = 1;
+        jtag_vif_drv.tms = 1;
       end
     SELECT_DR:
       begin
         // this.next_state = SELECT_IR;
-        tms = 1;
-      end
-    SELECT_IR:
-      begin
-        // this.next_state = CAPTURE;
-      end
-    CAPTURE:
-      begin
-        // this.next_state = SHIFT;
+        jtag_vif_drv.tms = 1;
       end
     SHIFT:
       begin
         // this.next_state = EXIT;
-        tms = 1;
+        test_class.print();
+        if (test_class.instr_sz > 0)
+          begin
+            `uvm_info("JTAG_DRIVER", "DRIVE TMS 0",UVM_LOW)
+            jtag_vif_drv.tdi = test_class.instr[test_class.instr_sz];
+            test_class.instr_sz--;
+          end
+        else
+          begin
+            jtag_vif_drv.tdi = test_class.instr[test_class.instr_sz];
+            `uvm_info("JTAG_DRIVER", "DRIVE TMS 1",UVM_LOW)
+            jtag_vif_drv.tms = 1;
+          end
       end
     EXIT:
       begin
         // this.next_state = UPDATE;
-        tms = 1;
+        jtag_vif_drv.tms = 1;
       end
     UPDATE:
       begin
@@ -175,10 +173,8 @@ function bit jtag_driver::drive_tms_ir(jtag_send_packet test_class);
         this.exit_ir = 1;
       end
     default:
-      tms = 0;
+      jtag_vif_drv.tms = 0;
   endcase // case (this.current_state)
-  
-  return tms;
   
 endfunction // drive_tms_ir
 

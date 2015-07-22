@@ -130,8 +130,6 @@ endtask // ir_seq
 // compute tms based on current state
 function void jtag_driver::drive_tms_ir(jtag_send_packet test_class);
   
-  bit tms;
-  
   this.exit_ir = 0;
   
   case (this.current_state)

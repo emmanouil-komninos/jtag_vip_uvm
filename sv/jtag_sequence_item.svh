@@ -9,8 +9,8 @@ class jtag_send_packet extends uvm_sequence_item;
   rand int instr_sz;
   rand int data_sz;
 
-  constraint c_instr_sz {instr_sz == $size(instr);}
-  constraint c_data_sz {data_sz == $size(data);}
+  constraint c_instr_sz {instr_sz == $size(instr)-1;}
+  constraint c_data_sz {data_sz == $size(data)-1;}
   
   `uvm_object_utils_begin(jtag_send_packet)
   `uvm_field_int(instr, UVM_DEFAULT)

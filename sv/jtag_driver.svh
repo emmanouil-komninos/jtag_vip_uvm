@@ -133,7 +133,7 @@ function void jtag_driver::drive_tms_ir(jtag_send_packet test_class);
   bit tms;
   
   this.exit_ir = 0;
-  
+  jtag_vif_drv.tms = 0;
   case (this.current_state)
     IDLE:
       begin

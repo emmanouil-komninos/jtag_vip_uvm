@@ -1,9 +1,11 @@
+// `include "jtag_simple_test.svh"
+`include "jtag_if.svh"
 class jtag_test extends uvm_test;
   
   jtag_env env;
   // virtual interface
   jtag_vif jtag_vif_drv;
-  
+
   extern function void check_vif();
   
   `uvm_component_utils(jtag_test)
@@ -35,8 +37,11 @@ endfunction // check_vif
 
 // jtag_simple_test
 class jtag_simple_test extends jtag_test;
-  
-  `uvm_component_utils(jtag_simple_test)
+    jtag_simple_sequence jtag_simple_seq;
+ 
+  `uvm_component_utils_begin(jtag_simple_test)
+  `uvm_field_object(jtag_simple_seq, UVM_DEFAULT)
+  `uvm_component_utils_end
   
   function new (string name = "jtag_simple_test", uvm_component parent = null);
     super.new(name,parent);
@@ -48,6 +53,17 @@ class jtag_simple_test extends jtag_test;
     jtag_agent_config::type_id::set_type_override(jtag_agent_config_active::get_type());    
     check_vif();
   endfunction // build_phase
+  
+  virtual task run_phase (uvm_phase phase);   
+    super.run_phase(phase);
+    phase.raise_objection(this,"Jtag test raised objection");    
+    uvm_test_done.raise_objection(this,"Jtag test raised uvm_test_done objection");
+    jtag_simple_seq = jtag_simple_sequence::type_id::create("jtag_simple_seq");
+    jtag_simple_seq.start(env.jtag_agnt.jtag_seqr);
+    `uvm_info("JTAG SIMPLE TEST", "After seq start", UVM_LOW)
+    uvm_test_done.drop_objection(this,"Jtag test dropped uvm_test_done objection");   
+    phase.drop_objection(this, "Jtag test dropped objection");
+  endtask // run_phase
   
 endclass // jtag_simple_test
 
@@ -80,17 +96,5 @@ class jtag_idcode_rd_test extends jtag_test;
     check_vif();
 
   endfunction // build_phase
-
-  task run_phase (uvm_phase phase);   
-    super.run_phase(phase);
-    phase.raise_objection(this,"Jtag test raised objection");    
-    uvm_test_done.raise_objection(this,"Jtag test raised uvm_test_done objection");
-    jtag_simple_seq = jtag_simple_sequence::type_id::create("jtag_simple_seq");
-    jtag_simple_seq.start(env.jtag_agnt.jtag_seqr);
-    `uvm_info("JTAG IDCODE TEST", "After seq start", UVM_LOW)
-    uvm_test_done.drop_objection(this,"Jtag test dropped uvm_test_done objection");   
-    phase.drop_objection(this, "Jtag test dropped objection");
-  endtask // run_phase
-  
     
 endclass // jtag_idcode_rd

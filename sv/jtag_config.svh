@@ -66,5 +66,20 @@ class jtag_env_config extends uvm_object;
     endfunction // new
 endclass // jtag_env_config
 
-      
+class test_configuration extends uvm_object;
+  
+  rand int seq_repeat;
+  
+  `uvm_object_utils_begin(test_configuration)
+  `uvm_field_int(seq_repeat, UVM_DEFAULT)
+  `uvm_object_utils_end
+
+  constraint c_seq_repeat {seq_repeat == 1;}
+  
+  function new (string name = "test_configuration");
+    super.new(name);
+  endfunction // new
+  
+endclass // test_configuration
+
 `endif

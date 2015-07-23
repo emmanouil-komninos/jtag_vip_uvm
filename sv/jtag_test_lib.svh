@@ -1,4 +1,3 @@
-// `include "jtag_simple_test.svh"
 `include "jtag_if.svh"
 class jtag_test extends uvm_test;
   
@@ -37,6 +36,7 @@ endfunction // check_vif
 
 // jtag_simple_test
 class jtag_simple_test extends jtag_test;
+  
     jtag_simple_sequence jtag_simple_seq;
  
   `uvm_component_utils_begin(jtag_simple_test)
@@ -68,9 +68,7 @@ class jtag_simple_test extends jtag_test;
 endclass // jtag_simple_test
 
 // read idcode test
-class jtag_idcode_rd_test extends jtag_test;
-  
-  jtag_simple_sequence jtag_simple_seq;
+class jtag_idcode_rd_test extends jtag_simple_test;
  
   `uvm_component_utils_begin(jtag_idcode_rd_test)
   `uvm_field_object(jtag_simple_seq, UVM_DEFAULT)
@@ -98,3 +96,5 @@ class jtag_idcode_rd_test extends jtag_test;
   endfunction // build_phase
     
 endclass // jtag_idcode_rd
+
+  

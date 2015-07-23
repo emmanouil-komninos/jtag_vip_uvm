@@ -1,3 +1,4 @@
+`include "jtag_defs.svh"
 `include "jtag_sequence_item.svh"
 `include "jtag_config.svh"
 

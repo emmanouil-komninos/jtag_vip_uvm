@@ -1,17 +1,6 @@
 `ifndef JTAG_SEQUENCE_LIB__SVH
  `define JTAG_SEQUENCE_LIB__SVH
 
-class test_configuration extends uvm_object;
-  rand int seq_repeat;
-
-  constraint c_seq_repeat {seq_repeat == 1;}
-  
-  function new (string name = "test_configuration");
-    super.new(name);
-  endfunction // new
-  
-endclass // test_configuration
-
 class jtag_simple_sequence extends uvm_sequence #(jtag_send_packet);
   test_configuration test_cfg;
   
@@ -51,7 +40,9 @@ class jtag_simple_sequence extends uvm_sequence #(jtag_send_packet);
 endclass // jtag_simple_sequence
 
 class jtag_simple_sequence_with_rand_delay extends jtag_simple_sequence;
-
+  
+  `uvm_object_utils(jtag_simple_sequence_with_rand_delay)
+  
   function new (string name = "jtag_simple_sequence_with_rand_delay");
     super.new(name);
   endfunction // new

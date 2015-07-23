@@ -63,7 +63,11 @@ class jtag_driver extends uvm_driver #(jtag_send_packet);
         ir_seq();
         // dr_seq();
         phase.drop_objection(this, "Jtag Driver dropped objection");
-        seq_item_port.item_done(req);
+        repeat (req.delay) @jtag_vif_drv.drv_ck;
+        seq_item_port.item_done();
+        
+        // following will return a response.. get the response in the sequence otherwise you ll get overflow
+        // seq_item_port.item_done(req);
       end
     
   endtask // run_phase
@@ -116,6 +120,7 @@ task jtag_driver::ir_seq();
   $cast(test_class, req.clone());
   
   this.exit_ir = 0;
+  test_class.print();
   
   while (!this.exit_ir)
     begin
@@ -133,6 +138,7 @@ function void jtag_driver::drive_tms_ir(jtag_send_packet test_class);
   bit tms;
   
   this.exit_ir = 0;
+  
   jtag_vif_drv.tms = 0;
   case (this.current_state)
     IDLE:

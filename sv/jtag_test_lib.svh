@@ -83,10 +83,13 @@ class jtag_idcode_rd_test extends jtag_simple_test;
     `uvm_info("JTAG_IDCODE_RD_TEST", "Build phase ", UVM_LOW)
 
     // specify agent configuration type
-    jtag_agent_config::type_id::set_type_override(jtag_agent_config_active::get_type());
+    // jtag_agent_config::type_id::set_type_override(jtag_agent_config_active::get_type());
 
     // specify sequence item type
     jtag_send_packet::type_id::set_type_override(jtag_idcode::get_type());
+    
+    // specify sequence type
+    jtag_simple_sequence::type_id::set_type_override(jtag_simple_sequence_with_rand_delay::get_type());
     
     // specify default sequence type
     // uvm_config_db#(uvm_object_wrapper)::set(this,"*jtag_seqr.run_phase", "default_sequence", jtag_simple_sequence::type_id::get());

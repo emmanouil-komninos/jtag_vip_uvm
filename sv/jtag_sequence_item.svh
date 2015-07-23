@@ -5,11 +5,11 @@
 class jtag_send_packet extends uvm_sequence_item;
   
   rand jtag_instr_registers instr;
-  rand logic [0:7] data;
+  rand logic [31:0] data;
   rand int instr_sz;
   rand int data_sz;
   
-  rand bit [0:3] delay;
+  rand bit [3:0] delay;
   
   constraint c_instr_sz {instr_sz == $size(instr)-1;}
   constraint c_data_sz {data_sz == $size(data)-1;}
@@ -33,6 +33,7 @@ class jtag_idcode extends jtag_send_packet;
   `uvm_object_utils(jtag_idcode)
 
   constraint c_instr { instr == 4'b0010;}
+  constraint c_data { data == 32'b0;}
   constraint c_delay { delay == 0;}
   
   function new (string name = "jtag_idcode");

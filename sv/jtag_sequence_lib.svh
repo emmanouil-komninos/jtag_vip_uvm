@@ -1,8 +1,10 @@
 `ifndef JTAG_SEQUENCE_LIB__SVH
  `define JTAG_SEQUENCE_LIB__SVH
 
-class jtag_simple_sequence extends uvm_sequence #(jtag_send_packet);
+class jtag_simple_sequence extends uvm_sequence #(jtag_send_packet, jtag_receive_packet);
+  
   test_configuration test_cfg;
+  jtag_receive_packet tmp_rsp;
   
   `uvm_object_utils_begin(jtag_simple_sequence)
   `uvm_field_object(test_cfg, UVM_DEFAULT)
@@ -18,7 +20,7 @@ class jtag_simple_sequence extends uvm_sequence #(jtag_send_packet);
     if (!uvm_config_db#(test_configuration)::get(null,"","test_cfg",test_cfg))
       begin
         `uvm_info("JTAG_SIMPLE_SEQUENCE","No test configuration exists in config db", UVM_LOW)
-        repeat_cnt = 100;
+        repeat_cnt = 1;
       end
     
     repeat(repeat_cnt)
@@ -29,10 +31,9 @@ class jtag_simple_sequence extends uvm_sequence #(jtag_send_packet);
         if (!req.randomize() with {req.delay == 0;})
           `uvm_fatal("JTAG_SIMPLE_SEQ", "Failed on randomization of req")   
         finish_item(req);
+        get_response(rsp);
+        rsp.print();
         
-        // if response is returned from the driver with item_done(req)
-        // get_response(rsp);
-
       end
     
   endtask // body
@@ -50,10 +51,12 @@ class jtag_simple_sequence_with_rand_delay extends jtag_simple_sequence;
   virtual task body();
     int repeat_cnt;
     
+    tmp_rsp = jtag_receive_packet::type_id::create("tmp_rsp");
+    
     if (!uvm_config_db#(test_configuration)::get(null,"","test_cfg",test_cfg))
       begin
         `uvm_info("JTAG_SIMPLE_SEQUENCE_WITH_RAND_DELAY","No test configuration exists in config db", UVM_LOW)
-        repeat_cnt = 100;
+        repeat_cnt = 10;
       end
     
     repeat(repeat_cnt)
@@ -64,7 +67,14 @@ class jtag_simple_sequence_with_rand_delay extends jtag_simple_sequence;
         if (!req.randomize())
           `uvm_fatal("JTAG_SIMPLE_SEQ_WITH_RAND_DELAY", 
                      "Failed on randomization of req")   
-        finish_item(req);
+        finish_item(req);       
+
+        // This is not a pipelined protocol but for fun i return the rsp from driver
+        // with item_done(req). Simple call to get_response(rsp); or :
+        get_response(rsp, req.get_transaction_id()); // blocking
+        tmp_rsp.copy(rsp);      // just to use copy()
+        tmp_rsp.print();
+        
       end
     
   endtask // body

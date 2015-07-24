@@ -29,7 +29,6 @@ class jtag_driver extends uvm_driver #(jtag_send_packet, jtag_receive_packet);
     endfunction // new
   
   // uvm phases
-  
   function void build_phase (uvm_phase phase);
     super.build_phase(phase);
     if(jtag_drv_cfg == null)

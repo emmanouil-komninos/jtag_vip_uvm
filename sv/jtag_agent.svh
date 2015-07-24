@@ -21,6 +21,7 @@ class jtag_agent extends uvm_agent;
 
   function void build_phase (uvm_phase phase);
     super.build_phase(phase);
+    
     if (jtag_agent_cfg == null)
       begin
         `uvm_info("JTAG_AGENT_INFO", " Creating configuration", UVM_LOW)

@@ -23,7 +23,7 @@ class jtag_collector extends uvm_component;
     super.connect_phase(phase);
     
     if (!uvm_config_db#(jtag_vif)::get(this, get_full_name(), "jtag_virtual_if", jtag_vif_col))
-      `uvm_fatal("JTAG_COLLECTOR", "Virtual interface is null")
+      `uvm_fatal("JTAG_COLLECTOR_FATAL", "Virtual interface is null")
     
   endfunction // connect_phase
   

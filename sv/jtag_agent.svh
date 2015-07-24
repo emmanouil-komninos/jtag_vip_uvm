@@ -37,7 +37,16 @@ class jtag_agent extends uvm_agent;
     if (jtag_agent_cfg.is_active == UVM_ACTIVE)
       begin
         `uvm_info("JTAG_AGENT_INFO", "Agent is active... building drv and seq", UVM_LOW)
+        
         uvm_config_db#(uvm_object)::set(this,"jtag_drv","jtag_drv_cfg", jtag_agent_cfg.jtag_drv_cfg);
+        
+        if(uvm_config_db#(jtag_vif)::exists(this, get_full_name(), "jtag_virtual_if"))
+          begin
+            `uvm_info("JTAG_AGENT_INFO","VIF EXISTS IN CONFIG DB",UVM_LOW)
+          end
+        else
+            `uvm_fatal("JTAG_AGENT_FATAL", {"VIF must exist for: ", get_full_name()})
+        
         jtag_drv = jtag_driver::type_id::create("jtag_drv",this);
         jtag_seqr = jtag_sequencer::type_id::create("jtag_seqr",this);
       end
@@ -54,15 +63,7 @@ class jtag_agent extends uvm_agent;
     if (jtag_agent_cfg.is_active == UVM_ACTIVE)
       begin
         `uvm_info("JTAG_AGENT_INFO", "Agent is active... connecting drv and seq", UVM_LOW)
-        jtag_drv.seq_item_port.connect(jtag_seqr.seq_item_export);    
-        if(uvm_config_db#(jtag_vif)::exists(this,"","jtag_vif_drv"))
-          begin
-            `uvm_info("JTAG_AGENT_INFO","VIF EXISTS IN CONFIG DB",UVM_LOW)
-            if (!uvm_config_db#(jtag_vif)::get(this, "","jtag_vif_drv", jtag_drv.jtag_vif_drv))
-              begin
-                `uvm_info("JTAG_AGENT_INFO", "Driver interface is not set", UVM_LOW)
-              end
-          end
+        jtag_drv.seq_item_port.connect(jtag_seqr.seq_item_export);
       end
     
   endfunction // connect_phase

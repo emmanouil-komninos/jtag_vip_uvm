@@ -3,15 +3,16 @@
 
 typedef enum {RESET, IDLE, SELECT_DR, SELECT_IR, CAPTURE, SHIFT, EXIT, EXIT2, PAUSE, UPDATE} state;
 
-class jtag_driver extends uvm_driver #(jtag_send_packet);
-
-  state next_state = IDLE;
-  state current_state = RESET;
-  bit        exit = 0;
-  jtag_send_packet test_class;
+class jtag_driver extends uvm_driver #(jtag_send_packet, jtag_receive_packet);
   
   // configuration component for the driver
   jtag_driver_config jtag_drv_cfg;
+  
+  // no automation for the following 
+  state next_state = IDLE;
+  state current_state = RESET;
+  bit        exit = 0;
+  jtag_send_packet temp_req;
   
   // virtual interface
   jtag_vif jtag_vif_drv;
@@ -20,8 +21,6 @@ class jtag_driver extends uvm_driver #(jtag_send_packet);
   // allows for automatic configuration 
   // during call of super.build_phase()
   `uvm_component_utils_begin(jtag_driver)
-  `uvm_field_enum(state, next_state, UVM_DEFAULT)
-  `uvm_field_enum(state, current_state, UVM_DEFAULT)
   `uvm_field_object(jtag_drv_cfg, UVM_DEFAULT)
   `uvm_component_utils_end
 
@@ -58,18 +57,30 @@ class jtag_driver extends uvm_driver #(jtag_send_packet);
     while(1)
       begin
         seq_item_port.get_next_item(req);
-        phase.raise_objection(this,"Jtag Driver raised objection");
+        req.print();
         
-        $cast(test_class, req.clone());
+        rsp = jtag_receive_packet::type_id::create("rsp");
+
+        // in the sequence, when calling get_response(), we can optionally provide the transaction_id of the req
+        rsp.set_id_info(req);
+        
+        phase.raise_objection(this,"Jtag Driver raised objection");
+                
+        $cast(temp_req, req.clone()); // temp_req will be modified
         ir_seq();
         dr_seq();
         
         phase.drop_objection(this, "Jtag Driver dropped objection");
-        repeat (req.delay) @jtag_vif_drv.drv_ck;
-        seq_item_port.item_done();
         
-        // following will return a response.. get the response in the sequence otherwise you ll get overflow
-        // seq_item_port.item_done(req);
+        repeat (req.delay) @jtag_vif_drv.drv_ck;
+        
+        // following will return a response.. 
+        // get the response in the sequence otherwise you ll get overflow after a couple of rsps (8?)
+        seq_item_port.item_done(rsp);
+
+        // if no rsp is dont call the blocking get_response() at the sequence
+        // and don't return a rsp from here by calling :
+        // seq_item_port.item_done();        
       end
     
   endtask // run_phase
@@ -114,7 +125,6 @@ endtask // dr_seq
 task jtag_driver::ir_seq();
   
   this.exit = 0;
-  test_class.print();
   
   while (!this.exit)
     begin
@@ -129,9 +139,17 @@ endtask // ir_seq
 // compute tms based on current state
 function void jtag_driver::drive_tms_dr();
   
+  static bit capture_tdo = 0;
+  
   this.exit = 0;
   
   jtag_vif_drv.tms = 0;
+  
+  if (capture_tdo)
+    begin
+      rsp.data = {jtag_vif_drv.tdo, rsp.data[31:1]};
+    end
+  
   case (this.current_state)
     IDLE:
       begin
@@ -140,17 +158,18 @@ function void jtag_driver::drive_tms_dr();
       end
     SHIFT:
       begin
-        if (this.test_class.data_sz > 0)
+        if (this.temp_req.data_sz > 0)
           begin
             // this.next_state = SHIFT;
-            jtag_vif_drv.tdi = this.test_class.data[this.test_class.data_sz];
-            this.test_class.data_sz--;
+            jtag_vif_drv.tdi = this.temp_req.data[this.temp_req.data_sz];
+            this.temp_req.data_sz--;
+            capture_tdo = 1;
           end
         else
           begin
             // this.next_state = EXIT;
             // drive last bit to tdi
-            jtag_vif_drv.tdi = this.test_class.data[this.test_class.data_sz];
+            jtag_vif_drv.tdi = this.temp_req.data[this.temp_req.data_sz];
             jtag_vif_drv.tms = 1;
           end
       end
@@ -158,6 +177,7 @@ function void jtag_driver::drive_tms_dr();
       begin
         // this.next_state = UPDATE;
         jtag_vif_drv.tms = 1;
+        capture_tdo = 0;
       end
     UPDATE:
       begin
@@ -190,17 +210,17 @@ function void jtag_driver::drive_tms_ir();
       end
     SHIFT:
       begin
-        if (this.test_class.instr_sz > 0)
+        if (this.temp_req.instr_sz > 0)
           begin
             // this.next_state = SHIFT;
-            jtag_vif_drv.tdi = this.test_class.instr[this.test_class.instr_sz];
-            this.test_class.instr_sz--;
+            jtag_vif_drv.tdi = this.temp_req.instr[this.temp_req.instr_sz];
+            this.temp_req.instr_sz--;
           end
         else
           begin
             // this.next_state = EXIT;
             // drive last bit to tdi
-            jtag_vif_drv.tdi = this.test_class.instr[this.test_class.instr_sz];
+            jtag_vif_drv.tdi = this.temp_req.instr[this.temp_req.instr_sz];
             jtag_vif_drv.tms = 1;
           end
       end

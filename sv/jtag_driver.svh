@@ -38,9 +38,14 @@ class jtag_driver extends uvm_driver #(jtag_send_packet, jtag_receive_packet);
       end
   endfunction // build_phase
   
-  function void connect_phase (uvm_phase phase);
+  virtual function void connect_phase (uvm_phase phase);
     super.connect_phase(phase);
+   
     `uvm_info("JTAG_DRIVER_INFO","Driver Connect phase",UVM_LOW)
+    
+    if(!uvm_config_db#(jtag_vif)::get(this, get_full_name(), "jtag_virtual_if", jtag_vif_drv))
+      `uvm_fatal("JTAG_DRIVER_FATAL", {"VIF must be set for: ", get_full_name()})
+      
   endfunction // connect_phase
 
   task run_phase (uvm_phase phase);
@@ -56,10 +61,8 @@ class jtag_driver extends uvm_driver #(jtag_send_packet, jtag_receive_packet);
     while(1)
       begin
         seq_item_port.get_next_item(req);
-        req.print();
         
         rsp = jtag_receive_packet::type_id::create("rsp");
-
         // in the sequence, when calling get_response(), we can optionally provide the transaction_id of the req
         rsp.set_id_info(req);
         
@@ -79,7 +82,8 @@ class jtag_driver extends uvm_driver #(jtag_send_packet, jtag_receive_packet);
 
         // if no rsp required dont call the blocking get_response() at the sequence
         // and don't return a rsp from here by calling :
-        // seq_item_port.item_done();        
+        // seq_item_port.item_done();
+      
       end
     
   endtask // run_phase

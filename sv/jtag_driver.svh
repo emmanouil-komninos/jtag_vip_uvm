@@ -77,7 +77,7 @@ class jtag_driver extends uvm_driver #(jtag_send_packet, jtag_receive_packet);
         // get the response in the sequence otherwise you ll get overflow after a couple of rsps (8?)
         seq_item_port.item_done(rsp);
 
-        // if no rsp is dont call the blocking get_response() at the sequence
+        // if no rsp required dont call the blocking get_response() at the sequence
         // and don't return a rsp from here by calling :
         // seq_item_port.item_done();        
       end

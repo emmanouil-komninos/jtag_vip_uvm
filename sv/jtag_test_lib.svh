@@ -1,10 +1,12 @@
+// `include "jtag_simple_test.svh"
 `include "jtag_if.svh"
 class jtag_test extends uvm_test;
   
   jtag_env env;
-  // virtual interface
-  jtag_vif jtag_vif_drv;
 
+  // virtual interface
+  jtag_vif jtag_virtual_if;
+  
   extern function void check_vif();
   
   `uvm_component_utils(jtag_test)
@@ -18,20 +20,17 @@ class jtag_test extends uvm_test;
     `uvm_info("JTAG_TEST_INFO", "Build phase", UVM_LOW)
     env = jtag_env::type_id::create("env",this);
   endfunction // build_phase
-    
+  
 endclass // jtag_test
 
 // check_vif
 function void jtag_test::check_vif();
-  if (!uvm_config_db#(jtag_vif)::get(this,"","jtag_vif_drv",jtag_vif_drv))
+  if (!uvm_config_db#(jtag_vif)::get(this,"","jtag_virtual_if", jtag_virtual_if))
     begin
-      `uvm_fatal("JTAG_TEST_FATAL", {"VIF must be set for: ", get_full_name()})
+      `uvm_fatal("JTAG_TEST_FATAL", {"VIF must exist for: ", get_full_name()})
     end
   else
-    begin
-      `uvm_info("JTAG_TEST_INFO", " Test used if from  config db", UVM_LOW)
-      uvm_config_db#(jtag_vif)::set(this,"env.jtag_agnt","jtag_vif_drv",jtag_vif_drv);
-    end
+    uvm_config_db#(jtag_vif)::set(this,"*","jtag_virtual_if", jtag_virtual_if);
 endfunction // check_vif
 
 // jtag_simple_test
@@ -69,7 +68,8 @@ endclass // jtag_simple_test
 
 // read idcode test
 class jtag_idcode_rd_test extends jtag_simple_test;
- 
+  
+  // `uvm_component_utils(jtag_idcode_rd_test)
   `uvm_component_utils_begin(jtag_idcode_rd_test)
   `uvm_field_object(jtag_simple_seq, UVM_DEFAULT)
   `uvm_component_utils_end
@@ -93,11 +93,7 @@ class jtag_idcode_rd_test extends jtag_simple_test;
     
     // specify default sequence type
     // uvm_config_db#(uvm_object_wrapper)::set(this,"*jtag_seqr.run_phase", "default_sequence", jtag_simple_sequence::type_id::get());
-    
-    check_vif();
 
   endfunction // build_phase
     
 endclass // jtag_idcode_rd
-
-  

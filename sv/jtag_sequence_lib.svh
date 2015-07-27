@@ -4,7 +4,6 @@
 class jtag_simple_sequence extends uvm_sequence #(jtag_send_packet, jtag_receive_packet);
   
   test_configuration test_cfg;
-  jtag_receive_packet tmp_rsp;
   
   `uvm_object_utils_begin(jtag_simple_sequence)
   `uvm_field_object(test_cfg, UVM_DEFAULT)
@@ -42,7 +41,14 @@ endclass // jtag_simple_sequence
 
 class jtag_simple_sequence_with_rand_delay extends jtag_simple_sequence;
   
-  `uvm_object_utils(jtag_simple_sequence_with_rand_delay)
+  jtag_receive_packet tmp_rsp;
+  jtag_receive_packet tmp_rsp_cloned;
+  
+  `uvm_object_utils_begin(jtag_simple_sequence_with_rand_delay)
+  `uvm_field_object(test_cfg, UVM_DEFAULT)
+  `uvm_field_object(tmp_rsp, UVM_DEFAULT)
+  `uvm_field_object(tmp_rsp_cloned, UVM_DEFAULT)
+  `uvm_object_utils_end
   
   function new (string name = "jtag_simple_sequence_with_rand_delay");
     super.new(name);
@@ -56,7 +62,7 @@ class jtag_simple_sequence_with_rand_delay extends jtag_simple_sequence;
     if (!uvm_config_db#(test_configuration)::get(null,"","test_cfg",test_cfg))
       begin
         `uvm_info("JTAG_SIMPLE_SEQUENCE_WITH_RAND_DELAY","No test configuration exists in config db", UVM_LOW)
-        repeat_cnt = 10;
+        repeat_cnt = 2;
       end
     
     repeat(repeat_cnt)
@@ -72,6 +78,13 @@ class jtag_simple_sequence_with_rand_delay extends jtag_simple_sequence;
         // This is not a pipelined protocol but for fun i return the rsp from driver
         // with item_done(req). Simple call to get_response(rsp); or :
         get_response(rsp, req.get_transaction_id()); // blocking
+        rsp.print();
+
+        // always new pointer for tmp_rsp_cloned
+        $cast(tmp_rsp_cloned, rsp.clone());
+        tmp_rsp_cloned.print();
+        
+        // always same pointer for tmp_rsp
         tmp_rsp.copy(rsp);      // just to use copy()
         tmp_rsp.print();
         

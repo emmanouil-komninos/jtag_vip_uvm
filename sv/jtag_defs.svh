@@ -6,4 +6,13 @@ typedef enum bit [0:3] {
                         IDCODE = 'h2, DEBIG = 'h8,
                         MBIST = 'h9, BYPASS = 'hF} jtag_instr_registers;
 
+typedef enum {RESET, IDLE, 
+              SELECT_DR, SELECT_IR, 
+              CAPTURE_DR, CAPTURE_IR, 
+              SHIFT_DR, SHIFT_IR, 
+              EXIT_DR, EXIT_IR, 
+              EXIT2_DR, EXIT2_IR, 
+              PAUSE_DR, PAUSE_IR, 
+              UPDATE_DR, UPDATE_IR} tap_state;
+
 `endif

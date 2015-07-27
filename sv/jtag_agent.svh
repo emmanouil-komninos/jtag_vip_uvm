@@ -39,7 +39,9 @@ class jtag_agent extends uvm_agent;
         `uvm_info("JTAG_AGENT_INFO", "Agent is active... building drv and seq", UVM_LOW)
         
         uvm_config_db#(uvm_object)::set(this,"jtag_drv","jtag_drv_cfg", jtag_agent_cfg.jtag_drv_cfg);
-        
+
+        // the existance of vif can be checked in build phase since it is top down.
+        // That way we avoid driver errors in connect phase that is bottopm up
         if(uvm_config_db#(jtag_vif)::exists(this, get_full_name(), "jtag_virtual_if"))
           begin
             `uvm_info("JTAG_AGENT_INFO","VIF EXISTS IN CONFIG DB",UVM_LOW)
@@ -49,10 +51,10 @@ class jtag_agent extends uvm_agent;
         
         jtag_drv = jtag_driver::type_id::create("jtag_drv",this);
         jtag_seqr = jtag_sequencer::type_id::create("jtag_seqr",this);
-      end
-
+      end 
+    
     jtag_col = jtag_collector::type_id::create("jtag_col",this);
-    jtag_mon = jtag_monitor::type_id::create("jtag_mon",this);    
+    jtag_mon = jtag_monitor::type_id::create("jtag_mon",this);
     
   endfunction // build_phase
 

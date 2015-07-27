@@ -105,7 +105,7 @@ function void jtag_collector::compute_state();
       end
     SHIFT_IR: 
       begin
-        temp_rsp.instr = {jtag_vif_col.tdo, temp_rsp.instr[31:1]};
+        temp_rsp.instr = {jtag_vif_col.tdo, temp_rsp.instr[3:1]};
         if(jtag_vif_col.tms == 1)
           this.next_state = EXIT_IR;
       end

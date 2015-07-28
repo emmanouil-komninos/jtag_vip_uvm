@@ -3,12 +3,13 @@
 
 // extract bus signal info and translates it into transactions
 class jtag_collector extends uvm_component;
-  
+  bit dr_shifted_out = 0;
+  bit ir_shifted_out = 0;
   // no automation for the following 
   tap_state next_state = IDLE;
   tap_state current_state = RESET;
-  bit        exit = 0;
-  jtag_receive_packet temp_rsp;
+  bit exit = 0;
+  jtag_receive_packet col_rsp;
   
   jtag_vif jtag_vif_col;
 
@@ -27,33 +28,41 @@ class jtag_collector extends uvm_component;
 
   virtual function void connect_phase (uvm_phase phase);
     super.connect_phase(phase);
-   
+    
     `uvm_info("JTAG_COLLECTOR_INFO","Driver Connect phase",UVM_LOW)
     
     if (!uvm_config_db#(jtag_vif)::get(this, get_full_name(), "jtag_virtual_if", jtag_vif_col))
-    // equivalent : if (!uvm_config_db#(jtag_vif)::get(this, "", "jtag_virtual_if", jtag_vif_col))
-    // equivalent : if (!uvm_config_db#(jtag_vif)::get(null, get_full_name(), "jtag_virtual_if", jtag_vif_col))
+      // equivalent : if (!uvm_config_db#(jtag_vif)::get(this, "", "jtag_virtual_if", jtag_vif_col))
+      // equivalent : if (!uvm_config_db#(jtag_vif)::get(null, get_full_name(), "jtag_virtual_if", jtag_vif_col))
       `uvm_fatal("JTAG_COLLECTOR_FATAL", "Virtual interface is null")
     else
       `uvm_info("JTAG_COLLECTOR_INFO", {"VIF is set for: ", get_full_name()},UVM_LOW )
     
   endfunction // connect_phase
 
-  virtual task run_phase(uvm_phase phase);
-    temp_rsp = jtag_receive_packet::type_id::create("temp_rsp");
-    
-    forever
-      begin
-        compute_state();
-        @jtag_vif_col.drv_ck;
-        this.current_state = this.next_state;
-      end
-    
-  endtask // run_phase
-  
+  extern virtual task run_phase(uvm_phase phase);
   extern function void compute_state();
   
 endclass // jtag_collector
+
+task jtag_collector::run_phase(uvm_phase phase);
+  
+  col_rsp = jtag_receive_packet::type_id::create("col_rsp");
+  
+  forever
+    begin
+      compute_state();
+      @jtag_vif_col.drv_ck;
+      if (dr_shifted_out & ir_shifted_out)
+        begin
+          item_collected_port.write(col_rsp);
+          dr_shifted_out = 0;
+          ir_shifted_out = 0;
+        end
+      this.current_state = this.next_state;
+    end
+  
+endtask // run_phase
 
 // compute next state based on tms
 function void jtag_collector::compute_state();
@@ -99,19 +108,24 @@ function void jtag_collector::compute_state();
       end
     SHIFT_DR: 
       begin
-        temp_rsp.data = {jtag_vif_col.tdo, temp_rsp.data[31:1]};
+        col_rsp.data = {jtag_vif_col.tdo, col_rsp.data[31:1]};
         if(jtag_vif_col.tms == 1)
-          this.next_state = EXIT_DR;
+          begin
+            this.next_state = EXIT_DR;
+            dr_shifted_out = 1;
+          end
       end
     SHIFT_IR: 
       begin
-        temp_rsp.instr = {jtag_vif_col.tdo, temp_rsp.instr[3:1]};
+        col_rsp.instr = {jtag_vif_col.tdo, col_rsp.instr[3:1]};
         if(jtag_vif_col.tms == 1)
-          this.next_state = EXIT_IR;
+          begin
+            this.next_state = EXIT_IR;
+            ir_shifted_out = 1;
+          end
       end
     EXIT_DR:
-      begin
-        // temp_rsp.data = {jtag_vif_col.tdo, temp_rsp.data[31:1]};
+      begin        
         if(jtag_vif_col.tms == 1)
           this.next_state = UPDATE_DR;
         else
@@ -119,7 +133,6 @@ function void jtag_collector::compute_state();
       end
     EXIT_IR:
       begin
-        // temp_rsp.instr = {jtag_vif_col.tdo, temp_rsp.instr[31:1]};
         if(jtag_vif_col.tms == 1)
           this.next_state = UPDATE_IR;
         else

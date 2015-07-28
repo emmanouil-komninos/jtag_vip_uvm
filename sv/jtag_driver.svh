@@ -68,7 +68,7 @@ class jtag_driver extends uvm_driver #(jtag_send_packet, jtag_receive_packet);
         // in the sequence, when calling get_response(), 
         // we can optionally provide the transaction_id of the req to pick up the specific rsp
         rsp.set_id_info(req);
-        
+
         phase.raise_objection(this,"Jtag Driver raised objection");
                 
         $cast(temp_req, req.clone()); // temp_req will be modified
@@ -102,7 +102,7 @@ class jtag_driver extends uvm_driver #(jtag_send_packet, jtag_receive_packet);
   
   extern task dr_seq();
   extern task ir_seq();
-  extern function void compute_state(bit tms);
+  extern function void compute_state();
   extern function void drive_tms_ir();
   extern function void drive_tms_dr();
 
@@ -119,7 +119,7 @@ task jtag_driver::dr_seq();
   while (!this.exit)
     begin
       drive_tms_dr();
-      compute_state(jtag_vif_drv.tms);
+      compute_state();
       @jtag_vif_drv.drv_ck;
       this.current_state = this.next_state;
     end
@@ -133,7 +133,7 @@ task jtag_driver::ir_seq();
   while (!this.exit)
     begin
       drive_tms_ir();
-      compute_state(jtag_vif_drv.tms);
+      compute_state();
       @jtag_vif_drv.drv_ck;
       this.current_state = this.next_state;
     end
@@ -226,6 +226,7 @@ function void jtag_driver::drive_tms_ir();
             // this.next_state = SHIFT_IR;
             jtag_vif_drv.tdi = this.temp_req.instr[this.temp_req.instr_sz];
             this.temp_req.instr_sz--;
+            capture_tdo = 1;
           end
         else
           begin
@@ -239,6 +240,7 @@ function void jtag_driver::drive_tms_ir();
       begin
         // this.next_state = UPDATE_IR;
         jtag_vif_drv.tms = 1;
+        capture_tdo = 0;
       end
     UPDATE_IR:
       begin
@@ -252,103 +254,104 @@ function void jtag_driver::drive_tms_ir();
 endfunction // drive_tms_ir
 
 // compute next state based on tms
-function void jtag_driver::compute_state(bit tms);
+function void jtag_driver::compute_state();
+  
   
   case (this.current_state)
     RESET:
       begin 
-        if(tms == 0) 
+        if(jtag_vif_drv.tms == 0) 
           this.next_state = IDLE;
       end
     IDLE: 
       begin
-        if(tms == 1) 
+        if(jtag_vif_drv.tms == 1) 
           this.next_state = SELECT_DR;
       end
     SELECT_DR: 
       begin
-        if(tms == 1) 
+        if(jtag_vif_drv.tms == 1) 
           this.next_state = SELECT_IR;
         else
           this.next_state = CAPTURE_DR;
       end
     SELECT_IR: 
       begin
-        if(tms == 1)
+        if(jtag_vif_drv.tms == 1)
           this.next_state = RESET;
         else
           this.next_state = CAPTURE_IR;
       end
     CAPTURE_DR: 
       begin
-        if(tms == 1)
+        if(jtag_vif_drv.tms == 1)
           this.next_state = EXIT_DR;
         else
           this.next_state = SHIFT_DR;
       end
     CAPTURE_IR: 
       begin
-        if(tms == 1)
+        if(jtag_vif_drv.tms == 1)
           this.next_state = EXIT_IR;
         else
           this.next_state = SHIFT_IR;
       end
     SHIFT_DR: 
       begin
-        if(tms == 1)
+        if(jtag_vif_drv.tms == 1)
           this.next_state = EXIT_DR;
       end
     SHIFT_IR: 
       begin
-        if(tms == 1)
+        if(jtag_vif_drv.tms == 1)
           this.next_state = EXIT_IR;
       end
     EXIT_DR:
       begin
-        if(tms == 1)
+        if(jtag_vif_drv.tms == 1)
           this.next_state = UPDATE_DR;
         else
           this.next_state = PAUSE_DR;
       end
     EXIT_IR:
       begin
-        if(tms == 1)
+        if(jtag_vif_drv.tms == 1)
           this.next_state = UPDATE_IR;
         else
           this.next_state = PAUSE_IR;
       end
     PAUSE_DR:
       begin
-        if(tms == 1)
+        if(jtag_vif_drv.tms == 1)
           this.next_state = EXIT2_DR;
       end
     PAUSE_IR:
       begin
-        if(tms == 1)
+        if(jtag_vif_drv.tms == 1)
           this.next_state = EXIT2_IR;
       end
     EXIT2_DR:
       begin
-        if(tms == 1)
+        if(jtag_vif_drv.tms == 1)
           this.next_state = UPDATE_DR;
         else
           this.next_state = SHIFT_DR;
       end
     EXIT2_IR:
       begin
-        if(tms == 1)
+        if(jtag_vif_drv.tms == 1)
           this.next_state = UPDATE_IR;
         else
           this.next_state = SHIFT_IR;
       end
     UPDATE_DR, UPDATE_IR:
       begin
-        if(tms == 1)
+        if(jtag_vif_drv.tms == 1)
           this.next_state = SELECT_DR;
         else
           this.next_state = IDLE;
       end
-  endcase
+  endcase // case (this.current_state)
   
 endfunction // compute_state
 

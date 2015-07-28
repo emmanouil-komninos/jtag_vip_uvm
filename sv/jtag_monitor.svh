@@ -4,6 +4,8 @@
 // performs transaction level checking and coverage
 class jtag_monitor extends uvm_monitor;
   
+  jtag_receive_packet collected_rsp;
+  
   `uvm_component_utils_begin(jtag_monitor)
   `uvm_field_object(collected_rsp, UVM_DEFAULT)
   `uvm_component_utils_end

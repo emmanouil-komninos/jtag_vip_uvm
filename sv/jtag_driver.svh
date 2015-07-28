@@ -57,7 +57,7 @@ class jtag_driver extends uvm_driver #(jtag_send_packet, jtag_receive_packet);
       `uvm_info("JTAG_DRIVER_INFO", " Driver used if from config db", UVM_LOW)
     
     // time consuming part
-    while(1)
+    forever
       begin
         seq_item_port.get_next_item(req); // blocking
 

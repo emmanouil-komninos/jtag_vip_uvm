@@ -3,11 +3,11 @@
 
 class jtag_agent extends uvm_agent;
   
-  jtag_driver jtag_drv;
-  jtag_sequencer jtag_seqr;
+  jtag_driver driver;
+  jtag_sequencer sequencer;
 
-  jtag_collector jtag_col;
-  jtag_monitor jtag_mon;
+  collectorlector collector;
+  monitoritor monitor;
   
   jtag_agent_config jtag_agent_cfg;
 
@@ -36,8 +36,6 @@ function void jtag_agent::build_phase (uvm_phase phase);
       jtag_agent_cfg = jtag_agent_config::type_id::create("jtag_agent_cfg");
       if (!jtag_agent_cfg.randomize())
         `uvm_fatal("JTAG_AGENT_FATAL", "Randomization of jtag_agent_cfg failed")
-      // jtag_agent_cfg.print();
-      // jtag_agent_cfg.jtag_drv_cfg.print();
     end
   else
     `uvm_info("JTAG_AGENT_INFO", " Agent used auto config", UVM_LOW)
@@ -46,7 +44,7 @@ function void jtag_agent::build_phase (uvm_phase phase);
     begin
       `uvm_info("JTAG_AGENT_INFO", "Agent is active... building drv and seq", UVM_LOW)
       
-      uvm_config_db#(uvm_object)::set(this,"jtag_drv","jtag_drv_cfg", jtag_agent_cfg.jtag_drv_cfg);
+      uvm_config_db#(uvm_object)::set(this,"driver","driver_cfg", jtag_agent_cfg.driver_cfg);
 
       // the existance of vif can be checked in build phase since it is top down.
       // That way we avoid driver errors in connect phase that is bottopm up
@@ -57,12 +55,12 @@ function void jtag_agent::build_phase (uvm_phase phase);
       else
         `uvm_fatal("JTAG_AGENT_FATAL", {"VIF must exist for: ", get_full_name()})
       
-      jtag_drv = jtag_driver::type_id::create("jtag_drv",this);
-      jtag_seqr = jtag_sequencer::type_id::create("jtag_seqr",this);
+      driver = jtag_driver::type_id::create("driver",this);
+      sequencer = jtag_sequencer::type_id::create("sequencer",this);
     end 
   
-  jtag_col = jtag_collector::type_id::create("jtag_col",this);
-  jtag_mon = jtag_monitor::type_id::create("jtag_mon",this);
+  collector = collectorlector::type_id::create("collector",this);
+  monitor = monitoritor::type_id::create("monitor",this);
   
 endfunction // build_phase
 
@@ -71,12 +69,12 @@ function void jtag_agent::connect_phase (uvm_phase phase);
   
   `uvm_info("JTAG_AGENT_INFO", "Agent connect phase", UVM_LOW)
 
-  jtag_col.item_collected_port.connect(jtag_mon.col_mon_import);
+  collector.item_collected_port.connect(monitor.col_mon_import);
   
   if (jtag_agent_cfg.is_active == UVM_ACTIVE)
     begin
       `uvm_info("JTAG_AGENT_INFO", "Agent is active... connecting drv and seq", UVM_LOW)
-      jtag_drv.seq_item_port.connect(jtag_seqr.seq_item_export);
+      driver.seq_item_port.connect(sequencer.seq_item_export);
     end
   
 endfunction // connect_phase

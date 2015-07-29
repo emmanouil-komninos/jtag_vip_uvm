@@ -11,7 +11,6 @@ class jtag_collector extends uvm_component;
   
   tap_state current_state = X;
  
-  bit     exit = 0;  
   bit dr_shifted_out = 0;
   bit ir_shifted_out = 0;
   

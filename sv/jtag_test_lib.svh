@@ -25,12 +25,13 @@ endclass // jtag_test
 
 // check_vif
 function void jtag_test::check_vif();
-  if (!uvm_config_db#(jtag_vif)::get(this,"","jtag_virtual_if", jtag_virtual_if))
+  if (!uvm_config_db#(jtag_vif)::get(null,get_full_name(),"jtag_virtual_if", jtag_virtual_if))
     begin
       `uvm_fatal("JTAG_TEST_FATAL", {"VIF must exist for: ", get_full_name()})
     end
   else
     uvm_config_db#(jtag_vif)::set(this,"*","jtag_virtual_if", jtag_virtual_if);
+  
 endfunction // check_vif
 
 // jtag_simple_test
@@ -88,11 +89,14 @@ class jtag_idcode_rd_test extends jtag_simple_test;
     // specify sequence item type
     jtag_send_packet::type_id::set_type_override(jtag_idcode::get_type());
     
-    // specify sequence type
-    jtag_simple_sequence::type_id::set_type_override(jtag_simple_sequence_with_rand_delay::get_type());
-    
     // specify default sequence type
     // uvm_config_db#(uvm_object_wrapper)::set(this,"*jtag_seqr.run_phase", "default_sequence", jtag_simple_sequence::type_id::get());
+    
+    // specify sequence type
+    jtag_simple_sequence::type_id::set_type_override(jtag_simple_sequence_with_rand_delay::get_type());
+
+    // automatic configuration
+    uvm_config_int::set(this,"*", "coverage_enable", 1);
 
   endfunction // build_phase
     

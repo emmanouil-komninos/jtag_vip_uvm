@@ -3,18 +3,23 @@
 
 // extract bus signal info and translates it into transactions
 class jtag_collector extends uvm_component;
+ 
+  jtag_packet col_rsp;
+  jtag_packet col_trans;
   
-  `uvm_component_utils(jtag_collector)
-  
-  uvm_analysis_port #(jtag_receive_packet) item_collected_port;
+  `uvm_component_utils_begin(jtag_collector)  
+  `uvm_field_object(col_rsp, UVM_DEFAULT)
+  `uvm_field_object(col_trans, UVM_DEFAULT)
+  `uvm_component_utils_end
+
+  uvm_analysis_port #(jtag_packet) item_collected_rx_port;
+  uvm_analysis_port #(jtag_packet) item_collected_tx_port;
+
   jtag_vif jtag_vif_col;
   
   tap_state current_state = X;
- 
   bit dr_shifted_out = 0;
   bit ir_shifted_out = 0;
-  
-  jtag_receive_packet col_rsp;
   
   function new (string name, uvm_component parent);
     super.new(name, parent);
@@ -22,7 +27,8 @@ class jtag_collector extends uvm_component;
 
   virtual function void build_phase (uvm_phase phase);
     super.build_phase(phase);
-    item_collected_port = new("item_collected_port",this);
+    item_collected_rx_port = new("item_collected_rx_port",this);
+    item_collected_tx_port = new("item_collected_tx_port",this);
   endfunction // build_phase
 
   virtual function void connect_phase (uvm_phase phase);
@@ -46,7 +52,8 @@ endclass // jtag_collector
 
 task jtag_collector::run_phase(uvm_phase phase);
   
-  col_rsp = jtag_receive_packet::type_id::create("col_rsp");
+  col_rsp = jtag_packet::type_id::create("col_rsp");
+  col_trans = jtag_packet::type_id::create("col_trans");
   
   forever
     begin
@@ -54,7 +61,8 @@ task jtag_collector::run_phase(uvm_phase phase);
       compute_state();
       if (dr_shifted_out & ir_shifted_out)
         begin
-          item_collected_port.write(col_rsp);
+          item_collected_rx_port.write(col_rsp);
+          item_collected_tx_port.write(col_trans);
           dr_shifted_out = 0;
           ir_shifted_out = 0;
         end
@@ -111,6 +119,7 @@ function void jtag_collector::compute_state();
       end
     SHIFT_DR: 
       begin
+        col_trans.data = {jtag_vif_col.jtag_tb_mod.tb_ck.tdi, col_trans.data[31:1]};
         col_rsp.data = {jtag_vif_col.jtag_tb_mod.tb_ck.tdo, col_rsp.data[31:1]};
         if(jtag_vif_col.jtag_tb_mod.tb_ck.tms == 1)
           begin
@@ -119,6 +128,7 @@ function void jtag_collector::compute_state();
       end
     SHIFT_IR: 
       begin
+        col_trans.instr = {jtag_vif_col.jtag_tb_mod.tb_ck.tdi, col_trans.instr[3:1]};
         col_rsp.instr = {jtag_vif_col.jtag_tb_mod.tb_ck.tdo, col_rsp.instr[3:1]};
         if(jtag_vif_col.jtag_tb_mod.tb_ck.tms == 1)
           begin

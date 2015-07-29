@@ -1,7 +1,7 @@
 `ifndef JTAG_DRIVER__SVH
  `define JTAG_DRIVER__SVH
 
-class jtag_driver extends uvm_driver #(jtag_send_packet, jtag_receive_packet);
+class jtag_driver extends uvm_driver #(jtag_send_packet, jtag_packet);
   
   // configuration component for the driver
   jtag_driver_config driver_cfg;
@@ -64,7 +64,7 @@ class jtag_driver extends uvm_driver #(jtag_send_packet, jtag_receive_packet);
 
         // new pointer for each response.. 
         // maybe the sequence is draining rsp slower than the driver provides them
-        rsp = jtag_receive_packet::type_id::create("rsp");
+        rsp = jtag_packet::type_id::create("rsp");
         
         // in the sequence, when calling get_response(), 
         // we can optionally provide the transaction_id of the req to pick up the specific rsp

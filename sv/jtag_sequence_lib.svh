@@ -1,7 +1,7 @@
 `ifndef JTAG_SEQUENCE_LIB__SVH
  `define JTAG_SEQUENCE_LIB__SVH
 
-class jtag_simple_sequence extends uvm_sequence #(jtag_send_packet, jtag_receive_packet);
+class jtag_simple_sequence extends uvm_sequence #(jtag_send_packet, jtag_packet);
   
   test_configuration test_cfg;
   
@@ -19,7 +19,7 @@ class jtag_simple_sequence extends uvm_sequence #(jtag_send_packet, jtag_receive
     if (!uvm_config_db#(test_configuration)::get(null,"","test_cfg",test_cfg))
       begin
         `uvm_info("JTAG_SIMPLE_SEQUENCE","No test configuration exists in config db", UVM_LOW)
-        repeat_cnt = 1;
+        repeat_cnt = 5;
       end
     
     repeat(repeat_cnt)
@@ -41,8 +41,8 @@ endclass // jtag_simple_sequence
 
 class jtag_simple_sequence_with_rand_delay extends jtag_simple_sequence;
   
-  jtag_receive_packet tmp_rsp;
-  jtag_receive_packet tmp_rsp_cloned;
+  jtag_packet tmp_rsp;
+  jtag_packet tmp_rsp_cloned;
   
   `uvm_object_utils_begin(jtag_simple_sequence_with_rand_delay)
   `uvm_field_object(test_cfg, UVM_DEFAULT)
@@ -57,12 +57,12 @@ class jtag_simple_sequence_with_rand_delay extends jtag_simple_sequence;
   virtual task body();
     int repeat_cnt;
     
-    tmp_rsp = jtag_receive_packet::type_id::create("tmp_rsp");
+    tmp_rsp = jtag_packet::type_id::create("tmp_rsp");
     
     if (!uvm_config_db#(test_configuration)::get(null,"","test_cfg",test_cfg))
       begin
         `uvm_info("JTAG_SIMPLE_SEQUENCE_WITH_RAND_DELAY","No test configuration exists in config db", UVM_LOW)
-        repeat_cnt = 2;
+        repeat_cnt = 1;
       end
     
     repeat(repeat_cnt)

@@ -3,20 +3,20 @@
 
 // extract bus signal info and translates it into transactions
 class jtag_collector extends uvm_component;
-  bit dr_shifted_out = 0;
-  bit ir_shifted_out = 0;
-  // no automation for the following 
-  tap_state next_state = IDLE;
-  tap_state current_state = RESET;
-  bit exit = 0;
-  jtag_receive_packet col_rsp;
-  
-  jtag_vif jtag_vif_col;
-
-  uvm_analysis_port #(jtag_receive_packet) item_collected_port;
   
   `uvm_component_utils(jtag_collector)
-
+  
+  uvm_analysis_port #(jtag_receive_packet) item_collected_port;
+  jtag_vif jtag_vif_col;
+  
+  tap_state current_state = X;
+ 
+  bit     exit = 0;  
+  bit dr_shifted_out = 0;
+  bit ir_shifted_out = 0;
+  
+  jtag_receive_packet col_rsp;
+  
   function new (string name, uvm_component parent);
     super.new(name, parent);
   endfunction // new
@@ -51,15 +51,14 @@ task jtag_collector::run_phase(uvm_phase phase);
   
   forever
     begin
+      @jtag_vif_col.jtag_tb_mod.tb_ck;
       compute_state();
-      @jtag_vif_col.drv_ck;
       if (dr_shifted_out & ir_shifted_out)
         begin
           item_collected_port.write(col_rsp);
           dr_shifted_out = 0;
           ir_shifted_out = 0;
         end
-      this.current_state = this.next_state;
     end
   
 endtask // run_phase
@@ -68,106 +67,113 @@ endtask // run_phase
 function void jtag_collector::compute_state();
   
   case (this.current_state)
+    X:
+      begin 
+        if(jtag_vif_col.jtag_tb_mod.tb_ck.tms == 1) 
+          this.current_state = RESET;
+      end
     RESET:
       begin 
-        if(jtag_vif_col.tms == 0) 
-          this.next_state = IDLE;
+        if(jtag_vif_col.jtag_tb_mod.tb_ck.tms == 0) 
+          this.current_state = IDLE;
       end
     IDLE: 
       begin
-        if(jtag_vif_col.tms == 1) 
-          this.next_state = SELECT_DR;
+        if(jtag_vif_col.jtag_tb_mod.tb_ck.tms == 1) 
+          this.current_state = SELECT_DR;
       end
     SELECT_DR: 
       begin
-        if(jtag_vif_col.tms == 1) 
-          this.next_state = SELECT_IR;
+        if(jtag_vif_col.jtag_tb_mod.tb_ck.tms == 1) 
+          this.current_state = SELECT_IR;
         else
-          this.next_state = CAPTURE_DR;
+          this.current_state = CAPTURE_DR;
       end
     SELECT_IR: 
       begin
-        if(jtag_vif_col.tms == 1)
-          this.next_state = RESET;
+        if(jtag_vif_col.jtag_tb_mod.tb_ck.tms == 1)
+          this.current_state = RESET;
         else
-          this.next_state = CAPTURE_IR;
+          this.current_state = CAPTURE_IR;
       end
     CAPTURE_DR: 
       begin
-        if(jtag_vif_col.tms == 1)
-          this.next_state = EXIT_DR;
+        if(jtag_vif_col.jtag_tb_mod.tb_ck.tms == 1)
+          this.current_state = EXIT_DR;
         else
-          this.next_state = SHIFT_DR;
+          this.current_state = SHIFT_DR;
       end
     CAPTURE_IR: 
       begin
-        if(jtag_vif_col.tms == 1)
-          this.next_state = EXIT_IR;
+        if(jtag_vif_col.jtag_tb_mod.tb_ck.tms == 1)
+          this.current_state = EXIT_IR;
         else
-          this.next_state = SHIFT_IR;
+          this.current_state = SHIFT_IR;
       end
     SHIFT_DR: 
       begin
-        col_rsp.data = {jtag_vif_col.tdo, col_rsp.data[31:1]};
-        if(jtag_vif_col.tms == 1)
+        col_rsp.data = {jtag_vif_col.jtag_tb_mod.tb_ck.tdo, col_rsp.data[31:1]};
+        if(jtag_vif_col.jtag_tb_mod.tb_ck.tms == 1)
           begin
-            this.next_state = EXIT_DR;
-            dr_shifted_out = 1;
+            this.current_state = EXIT_DR;
           end
       end
     SHIFT_IR: 
       begin
-        col_rsp.instr = {jtag_vif_col.tdo, col_rsp.instr[3:1]};
-        if(jtag_vif_col.tms == 1)
+        col_rsp.instr = {jtag_vif_col.jtag_tb_mod.tb_ck.tdo, col_rsp.instr[3:1]};
+        if(jtag_vif_col.jtag_tb_mod.tb_ck.tms == 1)
           begin
-            this.next_state = EXIT_IR;
-            ir_shifted_out = 1;
+            this.current_state = EXIT_IR;
           end
       end
     EXIT_DR:
-      begin        
-        if(jtag_vif_col.tms == 1)
-          this.next_state = UPDATE_DR;
+      begin   
+        col_rsp.data = {jtag_vif_col.jtag_tb_mod.tb_ck.tdo, col_rsp.data[31:1]};   
+        dr_shifted_out = 1;  
+        if(jtag_vif_col.jtag_tb_mod.tb_ck.tms == 1)
+          this.current_state = UPDATE_DR;
         else
-          this.next_state = PAUSE_DR;
+          this.current_state = PAUSE_DR;
       end
     EXIT_IR:
       begin
-        if(jtag_vif_col.tms == 1)
-          this.next_state = UPDATE_IR;
+        col_rsp.instr = {jtag_vif_col.jtag_tb_mod.tb_ck.tdo, col_rsp.instr[3:1]};
+        ir_shifted_out = 1;
+        if(jtag_vif_col.jtag_tb_mod.tb_ck.tms == 1)
+          this.current_state = UPDATE_IR;
         else
-          this.next_state = PAUSE_IR;
+          this.current_state = PAUSE_IR;
       end
     PAUSE_DR:
       begin
-        if(jtag_vif_col.tms == 1)
-          this.next_state = EXIT2_DR;
+        if(jtag_vif_col.jtag_tb_mod.tb_ck.tms == 1)
+          this.current_state = EXIT2_DR;
       end
     PAUSE_IR:
       begin
-        if(jtag_vif_col.tms == 1)
-          this.next_state = EXIT2_IR;
+        if(jtag_vif_col.jtag_tb_mod.tb_ck.tms == 1)
+          this.current_state = EXIT2_IR;
       end
     EXIT2_DR:
       begin
-        if(jtag_vif_col.tms == 1)
-          this.next_state = UPDATE_DR;
+        if(jtag_vif_col.jtag_tb_mod.tb_ck.tms == 1)
+          this.current_state = UPDATE_DR;
         else
-          this.next_state = SHIFT_DR;
+          this.current_state = SHIFT_DR;
       end
     EXIT2_IR:
       begin
-        if(jtag_vif_col.tms == 1)
-          this.next_state = UPDATE_IR;
+        if(jtag_vif_col.jtag_tb_mod.tb_ck.tms == 1)
+          this.current_state = UPDATE_IR;
         else
-          this.next_state = SHIFT_IR;
+          this.current_state = SHIFT_IR;
       end
     UPDATE_DR, UPDATE_IR:
       begin
-        if(jtag_vif_col.tms == 1)
-          this.next_state = SELECT_DR;
+        if(jtag_vif_col.jtag_tb_mod.tb_ck.tms == 1)
+          this.current_state = SELECT_DR;
         else
-          this.next_state = IDLE;
+          this.current_state = IDLE;
       end
   endcase
   

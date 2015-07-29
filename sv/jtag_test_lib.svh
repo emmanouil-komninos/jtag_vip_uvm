@@ -59,7 +59,7 @@ class jtag_simple_test extends jtag_test;
     phase.raise_objection(this,"Jtag test raised objection");    
     uvm_test_done.raise_objection(this,"Jtag test raised uvm_test_done objection");
     jtag_simple_seq = jtag_simple_sequence::type_id::create("jtag_simple_seq");
-    jtag_simple_seq.start(env.jtag_agnt.jtag_seqr);
+    jtag_simple_seq.start(env.jtag_agnt.sequencer);
     `uvm_info("JTAG SIMPLE TEST", "After seq start", UVM_LOW)
     uvm_test_done.drop_objection(this,"Jtag test dropped uvm_test_done objection");   
     phase.drop_objection(this, "Jtag test dropped objection");
@@ -90,7 +90,7 @@ class jtag_idcode_rd_test extends jtag_simple_test;
     jtag_send_packet::type_id::set_type_override(jtag_idcode::get_type());
     
     // specify default sequence type
-    // uvm_config_db#(uvm_object_wrapper)::set(this,"*jtag_seqr.run_phase", "default_sequence", jtag_simple_sequence::type_id::get());
+    // uvm_config_db#(uvm_object_wrapper)::set(this,"*sequencer.run_phase", "default_sequence", jtag_simple_sequence::type_id::get());
     
     // specify sequence type
     jtag_simple_sequence::type_id::set_type_override(jtag_simple_sequence_with_rand_delay::get_type());

@@ -4,7 +4,7 @@
 class jtag_driver extends uvm_driver #(jtag_send_packet, jtag_receive_packet);
   
   // configuration component for the driver
-  jtag_driver_config jtag_drv_cfg;
+  jtag_driver_config driver_cfg;
   
   // no automation for the following 
   tap_state current_state = X;
@@ -20,7 +20,7 @@ class jtag_driver extends uvm_driver #(jtag_send_packet, jtag_receive_packet);
   // allows for automatic configuration 
   // during call of super.build_phase()
   `uvm_component_utils_begin(jtag_driver)
-  `uvm_field_object(jtag_drv_cfg, UVM_DEFAULT)
+  `uvm_field_object(driver_cfg, UVM_DEFAULT)
   `uvm_component_utils_end
 
     function new (string name, uvm_component parent);
@@ -30,10 +30,10 @@ class jtag_driver extends uvm_driver #(jtag_send_packet, jtag_receive_packet);
   // uvm phases
   function void build_phase (uvm_phase phase);
     super.build_phase(phase);
-    if(jtag_drv_cfg == null)
+    if(driver_cfg == null)
       begin
         `uvm_fatal("JTAG_DRIVER_FATAL","Empty driver configuration")
-        jtag_drv_cfg.print(); 
+        driver_cfg.print(); 
       end
   endfunction // build_phase
   

@@ -7,8 +7,8 @@
 // performs transaction level checking and coverage
 class jtag_monitor extends uvm_monitor;
 
-  jtag_receive_packet collected_rsp;
-  jtag_send_packet collected_trans;
+  jtag_packet collected_rsp;
+  jtag_packet collected_trans;
   
   bit coverage_enable = 0;
   
@@ -18,8 +18,8 @@ class jtag_monitor extends uvm_monitor;
   `uvm_field_int(coverage_enable, UVM_DEFAULT)
   `uvm_component_utils_end
   
-  uvm_analysis_imp_tx #(jtag_send_packet, jtag_monitor) col_mon_tx_import;
-  uvm_analysis_imp_rx #(jtag_receive_packet, jtag_monitor) col_mon_rx_import;
+  uvm_analysis_imp_tx #(jtag_packet, jtag_monitor) col_mon_tx_import;
+  uvm_analysis_imp_rx #(jtag_packet, jtag_monitor) col_mon_rx_import;
 
   covergroup jtag_rsp_cg;
     JTAG_RSP: coverpoint collected_rsp.instr;
@@ -41,8 +41,8 @@ class jtag_monitor extends uvm_monitor;
   virtual function void build_phase (uvm_phase phase);
     super.build_phase(phase);
     
-    collected_rsp = jtag_receive_packet::type_id::create("collected_rsp");
-    collected_trans = jtag_send_packet::type_id::create("collected_trans");
+    collected_rsp = jtag_packet::type_id::create("collected_rsp");
+    collected_trans = jtag_packet::type_id::create("collected_trans");
     
     // will not be overriden by factory so new() is suficient
     col_mon_rx_import = new("col_mon_rx_import", this);
@@ -53,8 +53,8 @@ class jtag_monitor extends uvm_monitor;
     
   endfunction // build_phase
 
-  extern virtual function void write_rx (jtag_receive_packet rsp);
-  extern virtual function void write_tx (jtag_send_packet trans);
+  extern virtual function void write_rx (jtag_packet rsp);
+  extern virtual function void write_tx (jtag_packet trans);
   extern virtual function void perform_rsp_coverage();
   extern virtual function void perform_trans_coverage();
   
@@ -62,7 +62,7 @@ endclass // jtag_monitor
 
 // the body of write must be defined otherwise will get elaboration error
 // automatically called when collector writes to its analysis port
-function void jtag_monitor::write_rx (jtag_receive_packet rsp);
+function void jtag_monitor::write_rx (jtag_packet rsp);
   `uvm_info("JTAG_COLLECTOR", "PRINTS RSP ->", UVM_LOW)
   collected_rsp.copy(rsp);
   collected_rsp.print();
@@ -72,7 +72,7 @@ function void jtag_monitor::write_rx (jtag_receive_packet rsp);
 
 endfunction // write_rx
 
-function void jtag_monitor::write_tx (jtag_send_packet trans);
+function void jtag_monitor::write_tx (jtag_packet trans);
   `uvm_info("JTAG_COLLECTOR", "PRINTS TRANS ->", UVM_LOW)
   collected_trans.copy(trans);
   collected_trans.print();

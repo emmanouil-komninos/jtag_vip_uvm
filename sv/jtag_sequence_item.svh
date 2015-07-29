@@ -48,8 +48,8 @@ class jtag_idcode extends jtag_send_packet;
 
   `uvm_object_utils(jtag_idcode)
 
-  constraint c_instr { instr == 4'b0010;}
-  constraint c_data { data == 32'b0;}
+  constraint c_instr { instr == 4'h2;}
+  constraint c_data { data == 32'h0;}
   constraint c_delay { delay == 0;}
   
   function new (string name = "jtag_idcode");

@@ -73,6 +73,9 @@ class jtag_driver extends uvm_driver #(jtag_send_packet, jtag_packet);
         phase.raise_objection(this,"Jtag Driver raised objection");
                 
         $cast(temp_req, req.clone()); // temp_req will be modified
+        `uvm_info("JTAG_DRIVER_INFO", " Driving -> ", UVM_LOW)
+        temp_req.print();
+        
         ir_seq();
         dr_seq();
         
@@ -142,8 +145,9 @@ endtask // ir_seq
 // compute tms based on current state
 function void jtag_driver::drive_tms_dr();
     
-  this.exit = 0;
+  static int cnt = 0;
   
+  this.exit = 0;
   jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 0;
   
   case (this.current_state)
@@ -159,17 +163,18 @@ function void jtag_driver::drive_tms_dr();
       end
     SHIFT_DR:
       begin
-        if (this.temp_req.data_sz > 0)
+        if (this.temp_req.data_sz > cnt)
           begin
             // this.next_state = SHIFT_DR;
-            jtag_vif_drv.jtag_tb_mod.tb_ck.tdi <= this.temp_req.data[this.temp_req.data_sz];
+            jtag_vif_drv.jtag_tb_mod.tb_ck.tdi <= this.temp_req.data[cnt];
+            cnt++;
             this.temp_req.data_sz--;
           end
         else
           begin
             // this.next_state = EXIT_DR;
             // drive last bit to tdi
-            jtag_vif_drv.jtag_tb_mod.tb_ck.tdi <= this.temp_req.data[this.temp_req.data_sz];
+            jtag_vif_drv.jtag_tb_mod.tb_ck.tdi <= this.temp_req.data[cnt];
             jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 1;
           end
       end

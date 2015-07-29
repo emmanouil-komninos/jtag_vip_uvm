@@ -2,25 +2,24 @@
  `define JTAG_IF__SVH
 
 interface jtag_if (input bit tck);
-
-  logic tdi;
   
+  logic tdi;
   logic tdo;
   logic tms;
   logic trst;
   logic vref;
   logic gnd;
-
-  clocking drv_ck @(posedge tck);
+  
+  clocking tb_ck @(posedge tck);
     output tdi;
-    output tms;
+    inout tms;
     input  negedge tdo;
     input  vref;
     input  gnd;
-  endclocking // drv_ck
+  endclocking // tb_ck
 
-  modport jtag_drv_mod (clocking drv_ck);
-    
+  modport jtag_tb_mod (clocking tb_ck);
+      
 endinterface // jtag_if
 
 `endif

@@ -69,7 +69,8 @@ function void jtag_agent::connect_phase (uvm_phase phase);
   
   `uvm_info("JTAG_AGENT_INFO", "Agent connect phase", UVM_LOW)
 
-  collector.item_collected_port.connect(monitor.col_mon_import);
+  collector.item_collected_rx_port.connect(monitor.col_mon_rx_import);
+  collector.item_collected_tx_port.connect(monitor.col_mon_tx_import);
   
   if (jtag_agent_cfg.is_active == UVM_ACTIVE)
     begin

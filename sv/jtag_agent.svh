@@ -6,8 +6,8 @@ class jtag_agent extends uvm_agent;
   jtag_driver driver;
   jtag_sequencer sequencer;
 
-  collectorlector collector;
-  monitoritor monitor;
+  jtag_collector collector;
+  jtag_monitor monitor;
   
   jtag_agent_config jtag_agent_cfg;
 
@@ -59,8 +59,8 @@ function void jtag_agent::build_phase (uvm_phase phase);
       sequencer = jtag_sequencer::type_id::create("sequencer",this);
     end 
   
-  collector = collectorlector::type_id::create("collector",this);
-  monitor = monitoritor::type_id::create("monitor",this);
+  collector = jtag_collector::type_id::create("collector",this);
+  monitor = jtag_monitor::type_id::create("monitor",this);
   
 endfunction // build_phase
 

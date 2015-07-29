@@ -168,7 +168,6 @@ function void jtag_driver::drive_tms_dr();
             // this.next_state = SHIFT_DR;
             jtag_vif_drv.jtag_tb_mod.tb_ck.tdi <= this.temp_req.data[cnt];
             cnt++;
-            this.temp_req.data_sz--;
           end
         else
           begin

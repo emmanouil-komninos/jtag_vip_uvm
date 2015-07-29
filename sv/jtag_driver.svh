@@ -7,9 +7,10 @@ class jtag_driver extends uvm_driver #(jtag_send_packet, jtag_receive_packet);
   jtag_driver_config jtag_drv_cfg;
   
   // no automation for the following 
-  tap_state next_state = IDLE;
-  tap_state current_state = RESET;
+  tap_state current_state = X;
   bit        exit = 0;
+  bit dr_shifted_out = 0;
+  bit ir_shifted_out = 0;
   jtag_send_packet temp_req;
   
   // virtual interface
@@ -61,7 +62,7 @@ class jtag_driver extends uvm_driver #(jtag_send_packet, jtag_receive_packet);
       begin
         seq_item_port.get_next_item(req); // blocking
 
-        // new pointer for each response.... 
+        // new pointer for each response.. 
         // maybe the sequence is draining rsp slower than the driver provides them
         rsp = jtag_receive_packet::type_id::create("rsp");
         
@@ -77,9 +78,9 @@ class jtag_driver extends uvm_driver #(jtag_send_packet, jtag_receive_packet);
         
         phase.drop_objection(this, "Jtag Driver dropped objection");
         
-        repeat (req.delay) @jtag_vif_drv.drv_ck;
+        repeat (req.delay) @jtag_vif_drv.tb_ck;
         
-        // following will return a response.. 
+        // following will return a response. 
         // get the response in the sequence otherwise you ll get overflow after a couple of rsps (8?)
         seq_item_port.item_done(rsp);
 
@@ -95,7 +96,7 @@ class jtag_driver extends uvm_driver #(jtag_send_packet, jtag_receive_packet);
     if (objection == uvm_test_done)
       begin
         `uvm_info("JTAG_DRIVER_INFO", "Jtag driver @ all_dropped waiting for drain time", UVM_LOW)
-        repeat (15) @jtag_vif_drv.drv_ck;
+        repeat (15) @jtag_vif_drv.tb_ck;
         // uvm_test_done.drop_objection(this);
       end
   endtask // all_dropped
@@ -119,9 +120,8 @@ task jtag_driver::dr_seq();
   while (!this.exit)
     begin
       drive_tms_dr();
+      @jtag_vif_drv.tb_ck;
       compute_state();
-      @jtag_vif_drv.drv_ck;
-      this.current_state = this.next_state;
     end
   
 endtask // dr_seq
@@ -133,55 +133,50 @@ task jtag_driver::ir_seq();
   while (!this.exit)
     begin
       drive_tms_ir();
+      @jtag_vif_drv.tb_ck;
       compute_state();
-      @jtag_vif_drv.drv_ck;
-      this.current_state = this.next_state;
     end
 
 endtask // ir_seq
 
 // compute tms based on current state
 function void jtag_driver::drive_tms_dr();
-  
-  static bit capture_tdo = 0;
-  
+    
   this.exit = 0;
   
-  jtag_vif_drv.tms = 0;
-  
-  if (capture_tdo)
-    begin
-      rsp.data = {jtag_vif_drv.tdo, rsp.data[31:1]};
-    end
+  jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 0;
   
   case (this.current_state)
+    X:
+      begin
+        // this.next_state = RESET;
+        jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 1;
+      end
     IDLE:
       begin
         // this.next_state = SELECT_DR;
-        jtag_vif_drv.tms = 1;
+        jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 1;
       end
     SHIFT_DR:
       begin
         if (this.temp_req.data_sz > 0)
           begin
             // this.next_state = SHIFT_DR;
-            jtag_vif_drv.tdi = this.temp_req.data[this.temp_req.data_sz];
+            jtag_vif_drv.jtag_tb_mod.tb_ck.tdi <= this.temp_req.data[this.temp_req.data_sz];
             this.temp_req.data_sz--;
-            capture_tdo = 1;
           end
         else
           begin
             // this.next_state = EXIT_DR;
             // drive last bit to tdi
-            jtag_vif_drv.tdi = this.temp_req.data[this.temp_req.data_sz];
-            jtag_vif_drv.tms = 1;
+            jtag_vif_drv.jtag_tb_mod.tb_ck.tdi <= this.temp_req.data[this.temp_req.data_sz];
+            jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 1;
           end
       end
     EXIT_DR:
       begin
         // this.next_state = UPDATE_DR;
-        jtag_vif_drv.tms = 1;
-        capture_tdo = 0;
+        jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 1;
       end
     UPDATE_DR:
       begin
@@ -189,7 +184,7 @@ function void jtag_driver::drive_tms_dr();
         this.exit = 1;
       end
     default:
-      jtag_vif_drv.tms = 0;
+      jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 0;
   endcase // case (this.current_state)
   
 endfunction // drive_tms_dr
@@ -197,50 +192,47 @@ endfunction // drive_tms_dr
 
 // compute tms based on current state
 function void jtag_driver::drive_tms_ir();
-  
-  static bit capture_tdo = 0;
-  
+    
   this.exit = 0;
   
-  if (capture_tdo)
-    begin
-        rsp.instr = {jtag_vif_drv.tdo, rsp.instr[3:1]};
-    end
+  jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 0;
   
-  jtag_vif_drv.tms = 0;
   case (this.current_state)
+    X:
+      begin
+        // this.next_state = RESET;
+        jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 1;
+      end
     IDLE:
       begin
         // this.next_state = SELECT_DR;
-        jtag_vif_drv.tms = 1;
+        jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 1;
       end
     SELECT_DR:
       begin
         // this.next_state = SELECT_IR;
-        jtag_vif_drv.tms = 1;
+        jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 1;
       end
     SHIFT_IR:
       begin
         if (this.temp_req.instr_sz > 0)
           begin
             // this.next_state = SHIFT_IR;
-            jtag_vif_drv.tdi = this.temp_req.instr[this.temp_req.instr_sz];
+            jtag_vif_drv.jtag_tb_mod.tb_ck.tdi <= this.temp_req.instr[this.temp_req.instr_sz];
             this.temp_req.instr_sz--;
-            capture_tdo = 1;
           end
         else
           begin
             // this.next_state = EXIT_IR;
             // drive last bit to tdi
-            jtag_vif_drv.tdi = this.temp_req.instr[this.temp_req.instr_sz];
-            jtag_vif_drv.tms = 1;
+            jtag_vif_drv.jtag_tb_mod.tb_ck.tdi <= this.temp_req.instr[this.temp_req.instr_sz];
+            jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 1;
           end
       end
     EXIT_IR:
       begin
         // this.next_state = UPDATE_IR;
-        jtag_vif_drv.tms = 1;
-        capture_tdo = 0;
+        jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 1;
       end
     UPDATE_IR:
       begin
@@ -248,7 +240,7 @@ function void jtag_driver::drive_tms_ir();
         this.exit = 1;
       end
     default:
-      jtag_vif_drv.tms = 0;
+      jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 0;
   endcase // case (this.current_state)
   
 endfunction // drive_tms_ir
@@ -256,100 +248,108 @@ endfunction // drive_tms_ir
 // compute next state based on tms
 function void jtag_driver::compute_state();
   
-  
   case (this.current_state)
+    X:
+      begin 
+        if(jtag_vif_drv.jtag_tb_mod.tb_ck.tms == 1) 
+          this.current_state = RESET;
+      end        
     RESET:
       begin 
-        if(jtag_vif_drv.tms == 0) 
-          this.next_state = IDLE;
+        if(jtag_vif_drv.jtag_tb_mod.tb_ck.tms == 0) 
+          this.current_state = IDLE;
       end
     IDLE: 
       begin
-        if(jtag_vif_drv.tms == 1) 
-          this.next_state = SELECT_DR;
+        if(jtag_vif_drv.jtag_tb_mod.tb_ck.tms == 1) 
+          this.current_state = SELECT_DR;
       end
     SELECT_DR: 
       begin
-        if(jtag_vif_drv.tms == 1) 
-          this.next_state = SELECT_IR;
+        if(jtag_vif_drv.jtag_tb_mod.tb_ck.tms == 1) 
+          this.current_state = SELECT_IR;
         else
-          this.next_state = CAPTURE_DR;
+          this.current_state = CAPTURE_DR;
       end
     SELECT_IR: 
       begin
-        if(jtag_vif_drv.tms == 1)
-          this.next_state = RESET;
+        if(jtag_vif_drv.jtag_tb_mod.tb_ck.tms == 1)
+          this.current_state = RESET;
         else
-          this.next_state = CAPTURE_IR;
+          this.current_state = CAPTURE_IR;
       end
     CAPTURE_DR: 
       begin
-        if(jtag_vif_drv.tms == 1)
-          this.next_state = EXIT_DR;
+        if(jtag_vif_drv.jtag_tb_mod.tb_ck.tms == 1)
+          this.current_state = EXIT_DR;
         else
-          this.next_state = SHIFT_DR;
+          this.current_state = SHIFT_DR;
       end
     CAPTURE_IR: 
       begin
-        if(jtag_vif_drv.tms == 1)
-          this.next_state = EXIT_IR;
+        if(jtag_vif_drv.jtag_tb_mod.tb_ck.tms == 1)
+          this.current_state = EXIT_IR;
         else
-          this.next_state = SHIFT_IR;
+          this.current_state = SHIFT_IR;
       end
     SHIFT_DR: 
       begin
-        if(jtag_vif_drv.tms == 1)
-          this.next_state = EXIT_DR;
+        rsp.data = {jtag_vif_drv.jtag_tb_mod.tb_ck.tdo, rsp.data[31:1]};
+        if(jtag_vif_drv.jtag_tb_mod.tb_ck.tms == 1)
+          this.current_state = EXIT_DR;
       end
     SHIFT_IR: 
       begin
-        if(jtag_vif_drv.tms == 1)
-          this.next_state = EXIT_IR;
+        rsp.instr = {jtag_vif_drv.jtag_tb_mod.tb_ck.tdo, rsp.instr[3:1]};
+        if(jtag_vif_drv.jtag_tb_mod.tb_ck.tms == 1)
+          this.current_state = EXIT_IR;
       end
     EXIT_DR:
       begin
-        if(jtag_vif_drv.tms == 1)
-          this.next_state = UPDATE_DR;
+        rsp.data = {jtag_vif_drv.jtag_tb_mod.tb_ck.tdo, rsp.data[31:1]};
+        if(jtag_vif_drv.jtag_tb_mod.tb_ck.tms == 1)
+          this.current_state = UPDATE_DR;
         else
-          this.next_state = PAUSE_DR;
+          this.current_state = PAUSE_DR;
       end
     EXIT_IR:
       begin
-        if(jtag_vif_drv.tms == 1)
-          this.next_state = UPDATE_IR;
+        rsp.instr = {jtag_vif_drv.jtag_tb_mod.tb_ck.tdo, rsp.instr[3:1]};
+        if(jtag_vif_drv.jtag_tb_mod.tb_ck.tms == 1)
+          this.current_state = UPDATE_IR;
         else
-          this.next_state = PAUSE_IR;
+          this.current_state = PAUSE_IR;
       end
     PAUSE_DR:
       begin
-        if(jtag_vif_drv.tms == 1)
-          this.next_state = EXIT2_DR;
+        if(jtag_vif_drv.jtag_tb_mod.tb_ck.tms == 1)
+          this.current_state = EXIT2_DR;
       end
     PAUSE_IR:
       begin
-        if(jtag_vif_drv.tms == 1)
-          this.next_state = EXIT2_IR;
+        if(jtag_vif_drv.jtag_tb_mod.tb_ck.tms == 1)
+          this.current_state = EXIT2_IR;
       end
     EXIT2_DR:
       begin
-        if(jtag_vif_drv.tms == 1)
-          this.next_state = UPDATE_DR;
+        if(jtag_vif_drv.jtag_tb_mod.tb_ck.tms == 1)
+          this.current_state = UPDATE_DR;
         else
-          this.next_state = SHIFT_DR;
+          this.current_state = SHIFT_DR;
       end
     EXIT2_IR:
       begin
-        if(jtag_vif_drv.tms == 1)
-          this.next_state = UPDATE_IR;
+        if(jtag_vif_drv.jtag_tb_mod.tb_ck.tms == 1)
+          this.current_state = UPDATE_IR;
         else
-          this.next_state = SHIFT_IR;
+          this.current_state = SHIFT_IR;
       end
     UPDATE_DR, UPDATE_IR:
       begin
-        if(jtag_vif_drv.tms == 1)
-          this.next_state = SELECT_DR;
+        if(jtag_vif_drv.jtag_tb_mod.tb_ck.tms == 1)
+          this.current_state = SELECT_DR;
         else
-          this.next_state = IDLE;
+          this.current_state = IDLE;
       end
   endcase // case (this.current_state)
   

@@ -14,27 +14,27 @@ class jtag_driver_config extends uvm_object;
     constraint c_instr_sz {instr_sz == 3;}
   constraint c_data_sz {data_sz == 3;}
   
-  function new (string name = "jtag_drviver_cfg");
+  function new (string name = "jtag_driver_cfg");
     super.new(name);
   endfunction // new
   
-endclass // jtag_drviver_cfg
+endclass // jtag_driver_config
 
 class jtag_agent_config extends uvm_object;
   
   rand uvm_active_passive_enum is_active;
-  rand jtag_driver_config jtag_drv_cfg;
+  rand jtag_driver_config driver_cfg;
 
   `uvm_object_utils_begin(jtag_agent_config)
   `uvm_field_enum(uvm_active_passive_enum, is_active, UVM_DEFAULT)
-  `uvm_field_object(jtag_drv_cfg, UVM_DEFAULT)
+  `uvm_field_object(driver_cfg, UVM_DEFAULT)
   `uvm_object_utils_end
 
     constraint c_is_active {is_active == UVM_PASSIVE;}
   
     function new (string name = "jtag_agent_config");
       super.new(name);
-      jtag_drv_cfg = jtag_driver_config::type_id::create("jtag_drv_cfg");
+      driver_cfg = jtag_driver_config::type_id::create("driver_cfg");
     endfunction // new
   
 endclass // jtag_agent_config
@@ -46,7 +46,7 @@ class jtag_agent_config_active extends jtag_agent_config;
    
   function new (string name = "jtag_agent_config_active");
     super.new(name);
-    jtag_drv_cfg = jtag_driver_config::type_id::create("jtag_drv_cfg");
+    driver_cfg = jtag_driver_config::type_id::create("driver_cfg");
   endfunction // new
   
 endclass // jtag_agent_config_active
@@ -81,5 +81,4 @@ class test_configuration extends uvm_object;
   endfunction // new
   
 endclass // test_configuration
-
 `endif

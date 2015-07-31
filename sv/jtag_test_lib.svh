@@ -97,6 +97,7 @@ class jtag_idcode_rd_test extends jtag_simple_test;
 
     // automatic configuration
     uvm_config_int::set(this,"*", "coverage_enable", 1);
+    uvm_config_int::set(this,"*", "drv_mon_tx_check_en", 1);
 
   endfunction // build_phase
     

@@ -1,0 +1,1 @@
+irun -uvmhome $UVM_HOME -f minsoc_files2compile /BeFtw/tb/minsoc_tc_top_simple.sv -top minsoc_tc_top +define+OR1200_ASIC +UVM_TESTNAME=jtag_idcode_rd_test -access +rwc -seed random -gui -input irun_cmds.tcl

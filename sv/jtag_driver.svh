@@ -13,14 +13,24 @@ class jtag_driver extends uvm_driver #(jtag_send_packet, jtag_packet);
   bit ir_shifted_out = 0;
   jtag_send_packet temp_req;
   
+  // enable tx checks
+  bit drv_mon_tx_check_en = 0;
+  jtag_packet drv_mon_tx_packet;
+  
   // virtual interface
   jtag_vif jtag_vif_drv;
+
+  // port to monitor
+  uvm_analysis_port #(jtag_packet) drv_mon_tx_port;
   
   // uvm macros for configuration
   // allows for automatic configuration 
   // during call of super.build_phase()
   `uvm_component_utils_begin(jtag_driver)
   `uvm_field_object(driver_cfg, UVM_DEFAULT)
+  `uvm_field_object(temp_req, UVM_DEFAULT)
+  `uvm_field_object(drv_mon_tx_packet, UVM_DEFAULT)
+  `uvm_field_int(drv_mon_tx_check_en, UVM_DEFAULT)
   `uvm_component_utils_end
 
     function new (string name, uvm_component parent);
@@ -34,6 +44,13 @@ class jtag_driver extends uvm_driver #(jtag_send_packet, jtag_packet);
       begin
         `uvm_fatal("JTAG_DRIVER_FATAL","Empty driver configuration")
         driver_cfg.print(); 
+      end
+    
+    // requires automatic configuration
+    if (drv_mon_tx_check_en)
+      begin
+        drv_mon_tx_port = new("drv_mon_tx_port", this);
+        drv_mon_tx_packet = jtag_packet::type_id::create("drv_mon_tx_packet");
       end
   endfunction // build_phase
   
@@ -62,6 +79,14 @@ class jtag_driver extends uvm_driver #(jtag_send_packet, jtag_packet);
       begin
         seq_item_port.get_next_item(req); // blocking
 
+        // used for sanity checking
+        if (drv_mon_tx_check_en)
+          begin
+            $cast(drv_mon_tx_packet.data, req.data);            
+            $cast(drv_mon_tx_packet.instr, req.instr);
+            drv_mon_tx_port.write(drv_mon_tx_packet);
+          end
+        
         // new pointer for each response.. 
         // maybe the sequence is draining rsp slower than the driver provides them
         rsp = jtag_packet::type_id::create("rsp");
@@ -78,7 +103,7 @@ class jtag_driver extends uvm_driver #(jtag_send_packet, jtag_packet);
         
         ir_seq();
         dr_seq();
-        
+
         phase.drop_objection(this, "Jtag Driver dropped objection");
         
         repeat (req.delay) @jtag_vif_drv.tb_ck;

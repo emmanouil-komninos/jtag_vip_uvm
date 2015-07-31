@@ -98,9 +98,10 @@ function void jtag_monitor::write_tx (jtag_packet trans);
   // used for sanity checking
   if (drv_mon_tx_check_en)
     begin
-      `uvm_info("JTAG_COLLECTOR", "COMPARING TX TRANS (from collector/ from driver)", UVM_LOW)
       if (!collected_tx.compare(driver_tx))
-        `uvm_fatal("JTAG_MONITOR", "DATA MISSMATCH")
+        `uvm_fatal("JTAG_MONITOR", "TX TRANS (from collector/ from driver) MISSMATCH")
+      else
+        `uvm_info("JTAG_COLLECTOR", "TX TRANS (from collector/ from driver) MATCH", UVM_LOW)
     end
   
 endfunction // write_rx

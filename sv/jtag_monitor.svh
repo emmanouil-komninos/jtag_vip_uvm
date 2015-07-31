@@ -95,16 +95,14 @@ function void jtag_monitor::write_tx (jtag_packet trans);
   if (coverage_enable)
     perform_trans_coverage();
 
+  // used for sanity checking
   if (drv_mon_tx_check_en)
     begin
-      `uvm_info("JTAG_COLLECTOR", "PRINTS TX TRANS (from collector/ from driver)->", UVM_LOW)
-      collected_tx.print();
-      driver_tx.print();
-
-      // if (collected_tx.data != driver_tx.data)
+      `uvm_info("JTAG_COLLECTOR", "COMPARING TX TRANS (from collector/ from driver)", UVM_LOW)
       if (!collected_tx.compare(driver_tx))
         `uvm_fatal("JTAG_MONITOR", "DATA MISSMATCH")
     end
+  
 endfunction // write_rx
 
 function void jtag_monitor::write_drv_tx (jtag_packet trans);

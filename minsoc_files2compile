@@ -1,0 +1,70 @@
+-incdir ///BeFtw/tb/jtag_vip_uvm/sv
+
+-incdir ///BeFtw/minsoc/trunk/rtl/verilog/
+-incdir ///BeFtw/minsoc/trunk/backend/
+-incdir ///BeFtw/minsoc/trunk/prj/src/blackboxes/
+-incdir ///BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/
+-incdir ///BeFtw/adv_debug_sys/trunk/Hardware/adv_dbg_if/rtl/verilog/
+-incdir ///BeFtw/adv_debug_sys/trunk/Hardware/jtag/tap/rtl/verilog/
+
+///BeFtw/minsoc/trunk/backend/minsoc_defines.v
+
+///BeFtw/minsoc/trunk/rtl/verilog/timescale.v
+
+///BeFtw/minsoc/trunk/rtl/verilog/minsoc_clock_manager.v
+
+///BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_defines.v
+
+///BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_pm.v                     
+///BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_tt.v           
+///BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_pic.v
+///BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_du.v                            
+///BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_sb.v   
+///BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_qmem_top.v
+///BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_spram_32_bw.v 
+///BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_dc_tag.v             
+///BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_dc_ram.v               
+///BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_dc_fsm.v   
+///BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_dc_top.v              
+///BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_cfgr.v     
+///BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_except.v
+///BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_freeze.v                     
+///BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_reg2mem.v    
+///BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_mem2reg.v
+///BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_wbmux.v
+///BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_lsu.v
+///BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_sprs.v         
+///BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_gmultp2_32x32.v 
+///BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_mult_mac.v
+/////BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_operandmuxes.v
+/////BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_dpram.v
+/////BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_genpc.v
+/////BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_fpu.v
+/////BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_alu.v
+/////BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_rf.v
+/////BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_ctrl.v
+/////BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_if.v                   
+/////BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_dmmu_tlb.v
+/////BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_dmmu_top.v
+/////BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_cpu.v                     
+/////BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_ic_tag.v                  
+/////BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_ic_ram.v                
+/////BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_ic_fsm.v
+/////BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_ic_top.v            
+/////BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_spram.v
+/////BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_immu_tlb.v
+/////BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_immu_top.v
+/////BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_wb_biu.v
+/////BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_iwb_biu.v
+
+/////BeFtw/minsoc/trunk/rtl/verilog/or1200/rtl/verilog/or1200_top.v
+
+/////BeFtw/adv_debug_sys/trunk/Hardware/adv_dbg_if/rtl/verilog/adbg_defines.v
+/////BeFtw/minsoc/trunk/prj/src/blackboxes/adbg_top.v
+
+/////BeFtw/adv_debug_sys/trunk/Hardware/jtag/tap/rtl/verilog/tap_top.v
+
+/////BeFtw/tb/jtag_vip_uvm/sv/jtag_if.svh
+/////BeFtw/tb/jtag_vip_uvm/sv/jtag_pkg.svh
+
+/////BeFtw/minsoc/trunk/rtl/verilog/minsoc_top.v

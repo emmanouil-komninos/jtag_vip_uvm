@@ -2,6 +2,7 @@
  `define JTAG_MONITOR__SVH
 
 `uvm_analysis_imp_decl(_tx)
+`uvm_analysis_imp_decl(_drv_tx)
 `uvm_analysis_imp_decl(_rx)
 
 // performs transaction level checking and coverage
@@ -9,16 +10,23 @@ class jtag_monitor extends uvm_monitor;
 
   jtag_packet collected_rsp;
   jtag_packet collected_trans;
+  jtag_packet driver_trans;
   
   bit coverage_enable = 0;
   
+  // enable tx checks
+  bit drv_mon_tx_check_en = 0;
+
   `uvm_component_utils_begin(jtag_monitor)
   `uvm_field_object(collected_rsp, UVM_DEFAULT)
   `uvm_field_object(collected_trans, UVM_DEFAULT)
+  `uvm_field_object(driver_trans, UVM_DEFAULT)
   `uvm_field_int(coverage_enable, UVM_DEFAULT)
+  `uvm_field_int(drv_mon_tx_check_en, UVM_DEFAULT)
   `uvm_component_utils_end
   
   uvm_analysis_imp_tx #(jtag_packet, jtag_monitor) col_mon_tx_import;
+  uvm_analysis_imp_drv_tx #(jtag_packet, jtag_monitor) drv_mon_tx_import;
   uvm_analysis_imp_rx #(jtag_packet, jtag_monitor) col_mon_rx_import;
 
   covergroup jtag_rsp_cg;
@@ -43,9 +51,15 @@ class jtag_monitor extends uvm_monitor;
     
     collected_rsp = jtag_packet::type_id::create("collected_rsp");
     collected_trans = jtag_packet::type_id::create("collected_trans");
+    driver_trans = jtag_packet::type_id::create("driver_trans");
     
     // will not be overriden by factory so new() is suficient
     col_mon_rx_import = new("col_mon_rx_import", this);
+    
+    // requires automatic configuration
+    if (drv_mon_tx_check_en)
+      drv_mon_tx_import = new("drv_mon_tx_import", this);
+    
     col_mon_tx_import = new("col_mon_tx_import", this);
     
     if (coverage_enable)
@@ -55,6 +69,7 @@ class jtag_monitor extends uvm_monitor;
 
   extern virtual function void write_rx (jtag_packet rsp);
   extern virtual function void write_tx (jtag_packet trans);
+  extern virtual function void write_drv_tx (jtag_packet trans);
   extern virtual function void perform_rsp_coverage();
   extern virtual function void perform_trans_coverage();
   
@@ -63,9 +78,9 @@ endclass // jtag_monitor
 // the body of write must be defined otherwise will get elaboration error
 // automatically called when collector writes to its analysis port
 function void jtag_monitor::write_rx (jtag_packet rsp);
-  `uvm_info("JTAG_COLLECTOR", "PRINTS RSP ->", UVM_LOW)
+  `uvm_info("JTAG_COLLECTOR", "RX TRANS (from collector)", UVM_LOW)
   collected_rsp.copy(rsp);
-  collected_rsp.print();
+  // collected_rsp.print();
   
   if (coverage_enable)
     perform_rsp_coverage();  
@@ -73,13 +88,28 @@ function void jtag_monitor::write_rx (jtag_packet rsp);
 endfunction // write_rx
 
 function void jtag_monitor::write_tx (jtag_packet trans);
-  `uvm_info("JTAG_COLLECTOR", "PRINTS TRANS ->", UVM_LOW)
+  `uvm_info("JTAG_COLLECTOR", "TX TRANS (from collector)", UVM_LOW)
   collected_trans.copy(trans);
-  collected_trans.print();
+  // collected_trans.print();
   
   if (coverage_enable)
-    perform_trans_coverage();  
+    perform_trans_coverage();
 
+  if (drv_mon_tx_check_en)
+    begin
+      `uvm_info("JTAG_COLLECTOR", "PRINTS TX TRANS (from collector/ from driver)->", UVM_LOW)
+      collected_trans.print();
+      driver_trans.print();
+      
+      if (collected_trans.data != driver_trans.data)
+        `uvm_fatal("JTAG_MONITOR", "DATA MISSMATCH")
+    end
+endfunction // write_rx
+
+function void jtag_monitor::write_drv_tx (jtag_packet trans);
+  `uvm_info("JTAG_COLLECTOR", "TX TRANS (from driver)", UVM_LOW)
+  driver_trans.copy(trans);
+  // driver_trans.print();  
 endfunction // write_rx
 
 function void jtag_monitor::perform_rsp_coverage();  

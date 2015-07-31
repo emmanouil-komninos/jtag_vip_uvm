@@ -72,6 +72,10 @@ function void jtag_agent::connect_phase (uvm_phase phase);
   collector.item_collected_rx_port.connect(monitor.col_mon_rx_import);
   collector.item_collected_tx_port.connect(monitor.col_mon_tx_import);
   
+  // requires automatic configuration from test
+  if (monitor.drv_mon_tx_check_en)
+    driver.drv_mon_tx_port.connect(monitor.drv_mon_tx_import);
+    
   if (jtag_agent_cfg.is_active == UVM_ACTIVE)
     begin
       `uvm_info("JTAG_AGENT_INFO", "Agent is active... connecting drv and seq", UVM_LOW)

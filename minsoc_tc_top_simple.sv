@@ -19,7 +19,8 @@ module minsoc_tc_top;
 
    initial
      begin
-       uvm_config_db#(jtag_vif)::set(null,"uvm_test_top","jtag_virtual_if",jtag_interface);       
+       uvm_config_db#(jtag_vif)::set(null,"uvm_test_top","jtag_virtual_if",jtag_interface);  
+       uvm_config_db#(jtag_if_proxy)::set(null,"uvm_test_top","jtag_if_proxy",jtag_interface.proxy);       
      end
 
   initial

@@ -1,13 +1,17 @@
 // `include "jtag_simple_test.svh"
-`include "jtag_if.svh"
+// `include "jtag_if.svh"
 class jtag_test extends uvm_test;
   
   jtag_env env;
 
   // virtual interface
   jtag_vif jtag_virtual_if;
+    
+  //  interface proxy
+  jtag_if_proxy if_proxy;
   
   extern function void check_vif();
+  extern function void check_if_proxy();
   
   `uvm_component_utils(jtag_test)
   
@@ -34,6 +38,18 @@ function void jtag_test::check_vif();
   
 endfunction // check_vif
 
+
+// check_if_proxy
+function void jtag_test::check_if_proxy();
+  if (!uvm_config_db#(jtag_if_proxy)::get(null,get_full_name(),"jtag_if_proxy", if_proxy))
+    begin
+      `uvm_fatal("JTAG_TEST_FATAL", {"IF_PROXY must exist for: ", get_full_name()})
+    end
+  else
+    uvm_config_db#(jtag_if_proxy)::set(this,"*","jtag_if_proxy", if_proxy);
+  
+endfunction // check_if_proxy
+
 // jtag_simple_test
 class jtag_simple_test extends jtag_test;
   
@@ -52,6 +68,7 @@ class jtag_simple_test extends jtag_test;
     `uvm_info("JTAG_SIMPLE_TEST", "Build phase ", UVM_LOW)
     jtag_agent_config::type_id::set_type_override(jtag_agent_config_active::get_type());    
     check_vif();
+    check_if_proxy();
   endfunction // build_phase
   
   virtual task run_phase (uvm_phase phase);   

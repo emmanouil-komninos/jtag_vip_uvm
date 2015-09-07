@@ -20,12 +20,16 @@ class jtag_driver extends uvm_driver #(jtag_send_packet, jtag_packet);
   // virtual interface
   jtag_vif jtag_vif_drv;
 
+  // proxy alternative for the virtual interface
+  protected jtag_if_proxy if_proxy;
+  
   // port to monitor
   uvm_analysis_port #(jtag_packet) drv_mon_tx_port;
   
   // uvm macros for configuration
   // allows for automatic configuration 
   // during call of super.build_phase()
+
   `uvm_component_utils_begin(jtag_driver)
   `uvm_field_object(driver_cfg, UVM_DEFAULT)
   `uvm_field_object(temp_req, UVM_DEFAULT)
@@ -36,6 +40,10 @@ class jtag_driver extends uvm_driver #(jtag_send_packet, jtag_packet);
     function new (string name, uvm_component parent);
       super.new(name, parent);
     endfunction // new
+
+  // virtual function void set_if_proxy(jtag_if_proxy if_proxy);
+  //   this.if_proxy = if_proxy;
+  // endfunction // set_if_proxy
   
   // uvm phases
   function void build_phase (uvm_phase phase);
@@ -63,6 +71,11 @@ class jtag_driver extends uvm_driver #(jtag_send_packet, jtag_packet);
       `uvm_fatal("JTAG_DRIVER_FATAL", {"VIF must be set for: ", get_full_name()})
     else
       `uvm_info("JTAG_DRIVER_INFO", {"VIF is set for: ", get_full_name()},UVM_LOW )
+
+    if(!uvm_config_db#(jtag_if_proxy)::get(null,get_full_name(),"jtag_if_proxy",if_proxy))
+      `uvm_fatal("JTAG_DRIVER_FATAL", {"IF_PROXY must be set for: ", get_full_name()})
+    else
+      `uvm_info("JTAG_DRIVER_INFO", {"IF_PROXY is set for: ", get_full_name()},UVM_LOW )
       
   endfunction // connect_phase
 
@@ -173,6 +186,7 @@ function void jtag_driver::drive_tms_dr();
   static int cnt = 0;
   
   this.exit = 0;
+  
   jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 0;
   
   case (this.current_state)
@@ -191,7 +205,13 @@ function void jtag_driver::drive_tms_dr();
         if (this.temp_req.data_sz > cnt)
           begin
             // this.next_state = SHIFT_DR;
-            jtag_vif_drv.jtag_tb_mod.tb_ck.tdi <= this.temp_req.data[cnt];
+
+            // vif 
+            // jtag_vif_drv.jtag_tb_mod.tb_ck.tdi <= this.temp_req.data[cnt];
+
+            // proxy alternative to vif
+            this.if_proxy.set_tdi(this.temp_req.data[cnt]);
+
             cnt++;
           end
         else

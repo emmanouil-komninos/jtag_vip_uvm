@@ -65,7 +65,6 @@
 /////BeFtw/adv_debug_sys/trunk/Hardware/jtag/tap/rtl/verilog/tap_top.v
 
 /////BeFtw/tb/jtag_vip_uvm/sv/jtag_tb_pkg.svh
-/////BeFtw/tb/jtag_vip_uvm/sv/jtag_pkg.svh
 /////BeFtw/tb/jtag_vip_uvm/sv/jtag_if.svh
 
 /////BeFtw/minsoc/trunk/rtl/verilog/minsoc_top.v

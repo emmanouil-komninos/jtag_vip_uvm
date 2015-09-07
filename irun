@@ -1,1 +1,11 @@
 irun -uvmhome $UVM_HOME -f minsoc_files2compile /BeFtw/tb/minsoc_tc_top_simple.sv -top minsoc_tc_top +define+OR1200_ASIC +UVM_TESTNAME=jtag_idcode_rd_test -access +rwc -seed random -gui -input irun_cmds.tcl
+
+// incremental elaboration
+// create primary snapshot
+// snapshot_dir must exist
+// Run irun to compile each primary partition and elaborate the primary snapshots.
+
+irun -f files2compile_new ../tb/minsoc_tc_top_simple.sv -top minsoc_tc_top +define+OR1200_ASIC +UVM_TESTNAME=jtag_idcode_rd_test -access +rwc -seed random -mkprimsnap -incrbind minsoc_tc_top -snapshot tb_top -cds_implicit_tmpdir snapshot_dir
+
+// Run irun to compile the incremental partition, elaborate the simulation snapshot, and simulate the final model.
+ irun -f files2compile_new ../tb/minsoc_tc_top_simple.sv -top minsoc_tc_top +define+OR1200_ASIC +UVM_TESTNAME=jtag_idcode_rd_test -access +rwc -seed random -primname tb_top -cds_alternate_tmpdir snapshot_dir

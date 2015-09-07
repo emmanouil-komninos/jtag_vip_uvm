@@ -27,7 +27,7 @@ interface jtag_if (input bit tck);
 
    modport jtag_tb_mod (clocking tb_ck);
 
-    //  // proxy class extention and instantiation
+    // proxy class extention and instantiation
      class if_proxy extends jtag_tb_pkg::jtag_if_proxy;
        virtual function void set_tdi(bit tdi);
          tb_ck.tdi <= tdi;

@@ -187,18 +187,21 @@ function void jtag_driver::drive_tms_dr();
   
   this.exit = 0;
   
-  jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 0;
+  // jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 0;
+  if_proxy.set_tms(0);
   
   case (this.current_state)
     X:
       begin
         // this.next_state = RESET;
-        jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 1;
+        // jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 1;
+        if_proxy.set_tms(1);
       end
     IDLE:
       begin
         // this.next_state = SELECT_DR;
-        jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 1;
+        // jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 1;
+        if_proxy.set_tms(1);
       end
     SHIFT_DR:
       begin
@@ -218,14 +221,19 @@ function void jtag_driver::drive_tms_dr();
           begin
             // this.next_state = EXIT_DR;
             // drive last bit to tdi
-            jtag_vif_drv.jtag_tb_mod.tb_ck.tdi <= this.temp_req.data[cnt];
-            jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 1;
+            
+            // jtag_vif_drv.jtag_tb_mod.tb_ck.tdi <= this.temp_req.data[cnt];            
+            this.if_proxy.set_tdi(this.temp_req.data[cnt]);
+            
+            // jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 1;
+            if_proxy.set_tms(1);
           end
       end
     EXIT_DR:
       begin
         // this.next_state = UPDATE_DR;
-        jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 1;
+        // jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 1;
+        if_proxy.set_tms(1);
       end
     UPDATE_DR:
       begin
@@ -233,7 +241,10 @@ function void jtag_driver::drive_tms_dr();
         this.exit = 1;
       end
     default:
-      jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 0;
+      begin
+        // jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 0;
+        if_proxy.set_tms(0);
+      end
   endcase // case (this.current_state)
   
 endfunction // drive_tms_dr
@@ -244,23 +255,27 @@ function void jtag_driver::drive_tms_ir();
     
   this.exit = 0;
   
-  jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 0;
+  // jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 0;
+  if_proxy.set_tms(0);
   
   case (this.current_state)
     X:
       begin
         // this.next_state = RESET;
-        jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 1;
+        // jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 1;
+        if_proxy.set_tms(1);
       end
     IDLE:
       begin
         // this.next_state = SELECT_DR;
-        jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 1;
+        // jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 1;
+        if_proxy.set_tms(1);
       end
     SELECT_DR:
       begin
         // this.next_state = SELECT_IR;
-        jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 1;
+        // jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 1;
+        if_proxy.set_tms(1);
       end
     SHIFT_IR:
       begin
@@ -275,13 +290,15 @@ function void jtag_driver::drive_tms_ir();
             // this.next_state = EXIT_IR;
             // drive last bit to tdi
             jtag_vif_drv.jtag_tb_mod.tb_ck.tdi <= this.temp_req.instr[this.temp_req.instr_sz];
-            jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 1;
+            // jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 1;
+            if_proxy.set_tms(1);
           end
       end
     EXIT_IR:
       begin
         // this.next_state = UPDATE_IR;
-        jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 1;
+        // jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 1;
+        if_proxy.set_tms(1);
       end
     UPDATE_IR:
       begin
@@ -289,7 +306,10 @@ function void jtag_driver::drive_tms_ir();
         this.exit = 1;
       end
     default:
-      jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 0;
+      begin
+        jtag_vif_drv.jtag_tb_mod.tb_ck.tms <= 0;
+        if_proxy.set_tms(0);
+      end
   endcase // case (this.current_state)
   
 endfunction // drive_tms_ir

@@ -47,13 +47,22 @@ function void jtag_agent::build_phase (uvm_phase phase);
       uvm_config_db#(uvm_object)::set(this,"driver","driver_cfg", jtag_agent_cfg.driver_cfg);
 
       // the existance of vif can be checked in build phase since it is top down.
-      // That way we avoid driver errors in connect phase that is bottopm up
+      // That way we avoid driver errors in connect phase that is bottom up
       if(uvm_config_db#(jtag_vif)::exists(this, get_full_name(), "jtag_virtual_if"))
         begin
           `uvm_info("JTAG_AGENT_INFO","VIF EXISTS IN CONFIG DB",UVM_LOW)
         end
       else
         `uvm_fatal("JTAG_AGENT_FATAL", {"VIF must exist for: ", get_full_name()})
+      
+      // the existance of proxy can be checked in build phase since it is top down.
+      // That way we avoid driver errors in connect phase that is bottom up
+      if(uvm_config_db#(jtag_if_proxy)::exists(this, get_full_name(), "jtag_if_proxy"))
+        begin
+          `uvm_info("JTAG_AGENT_INFO","IF_PROXY EXISTS IN CONFIG DB",UVM_LOW)
+        end
+      else
+        `uvm_fatal("JTAG_AGENT_FATAL", {"IF_PROXY must exist for: ", get_full_name()})
       
       driver = jtag_driver::type_id::create("driver",this);
       sequencer = jtag_sequencer::type_id::create("sequencer",this);

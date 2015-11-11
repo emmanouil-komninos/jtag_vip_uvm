@@ -1,0 +1,9 @@
+
+for {set i 0} {$i<6} {incr i} {
+set id [waveform add -signals [subst  {
+	{[format {tb_top.cb_if.req_data_r[%d:%d]} [expr {$i*130+129}] [expr {$i*130}]]}
+	} ]]
+}
+set id [waveform add -signals [subst  {
+	{[format {tb_top.cb_if.req_data_r[779:0]}]}
+	} ]]
